@@ -33,7 +33,7 @@ services:
 
 networks:
   nodejsmon-network:
-    driver: internal
+    name: nodejsmon-network
   nginx-proxy:
     external: true
     
