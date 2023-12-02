@@ -2,4 +2,4 @@
 node_modules/
 data/
 coverage/
-docker-compose.override.yml
+docker-compose.yml
