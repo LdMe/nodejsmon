@@ -18,6 +18,12 @@ services:
       - ${APP_PORT}:3000
     depends_on:
       - mongo
+    environment:
+      - VIRTUAL_HOST=nodejsmon.lafuentedanel.com,www.nodejsmon.lafuentedanel.com
+      - LETSENCRYPT_HOST=nodejsmon.lafuentedanel.com,www.nodejsmon.lafuentedanel.com
+      - LETSENCRYPT_EMAIL=admin@lafuentedanel.com
+    expose:
+      - "3000"
     volumes:
       - .:/app
       - /app/node_modules
