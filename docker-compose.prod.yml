@@ -1,0 +1,33 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    container_name: mongo_nodejsmon
+    restart: always
+    volumes:
+      - ./data:/data/db
+    networks:
+      - nodejsmon-network
+      
+    
+  node:
+    build: .
+    container_name: nodejsmon
+    restart: always
+    ports:
+      - ${APP_PORT}:3000
+    depends_on:
+      - mongo
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - nodejsmon-network
+      - nginx-proxy
+
+networks:
+  nodejsmon-network:
+    driver: internal
+  nginx-proxy:
+    external: true
+    
