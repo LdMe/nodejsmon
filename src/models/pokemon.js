@@ -31,6 +31,7 @@ const pokemonSchema = new Schema({
     maxHp: Number,
     id: Number,
     evolutions: Array,
+    stats: Array,
     shiny: Boolean,
 });
 

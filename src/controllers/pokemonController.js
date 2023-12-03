@@ -86,15 +86,26 @@ const getNRandomUniqueMoves = async (moves, n) => {
     }
     return chosenMoves;
 }
+const getMaxHp = (pokemon) => {
+    console.log("basew_state",pokemon.stats[0].base_stat)
+    const firstPart = 2 * parseInt(pokemon.stats[0].base_stat) * pokemon.level;
+    console.log("firstPart", firstPart)
+    const secondPart = Math.floor(0.01 * firstPart + 10 + pokemon.level);
+    console.log("secondPart", secondPart)
 
+    const hp = Math.floor(0.01 * (2 * parseInt(pokemon.stats[0].base_stat) ) * pokemon.level + 10 + pokemon.level);
+    console.log("hp", hp)
+    return hp;
+}
 const getNewPokemon = async (id,level=5)=>{
     try {
+        level = Math.min(level,100);
         const pokemon = await fetchPokemon(id);
-        
+        pokemon.level = level;
         const evolutions = await getEvolutions(pokemon);
         const availableMoves = filterMovesByLevel(pokemon.moves, level);
         const activeMoves = await getNRandomUniqueMoves(availableMoves, 4);
-        const isShiny = Math.random() < 0.99;
+        const isShiny = Math.random() < 0.1;
         const newPokemon = {
             name: pokemon.name,
             level: level,
@@ -106,8 +117,8 @@ const getNewPokemon = async (id,level=5)=>{
             activeMoves: activeMoves,
             evolutions: evolutions || [],
             baseHp: pokemon.stats[0].base_stat,
-            maxHp: pokemon.stats[0].base_stat * level,
-            hp: pokemon.stats[0].base_stat * level,
+            maxHp: getMaxHp(pokemon),
+            hp: getMaxHp(pokemon),
             id: pokemon.id,
             shiny:isShiny
     
@@ -227,9 +238,12 @@ const addMove = async(pokemon,move)=>{
 }
     
 const addLevel = async(pokemon) => {
+    if(pokemon.level >= 100){
+        return pokemon;
+    }
     const dbPokemon = await Pokemon.findById(pokemon._id);
     dbPokemon.level++;
-    dbPokemon.maxHp = dbPokemon.baseHp * dbPokemon.level;
+    dbPokemon.maxHp = getMaxHp(dbPokemon);
     await dbPokemon.save();
     const evolvedPokemon = await evolve(dbPokemon);
     pokemon = evolvedPokemon;
@@ -285,29 +299,42 @@ const getMoveData = async(move) =>{
     }
 }
 
-const attack = async(attacker,defender,move,save=false)=> {
-    if(attacker.hp <= 0 || defender.hp <= 0 || !move){
-        return {attacker,defender,damage:0,typeMultiplier:1,move};
-    }
-    const moveData =  move;
-    let damage = moveData.power;
+
+const getDamage = (attacker,defender,move) =>{
+    console.log("attacker level",attacker.level)
+    console.log("attacker stats",attacker.stats[1].base_stat)
+    console.log("defender stats",defender.stats[2].base_stat)
+    console.log("move power",move.power)
+
+    let damage = (((2 * attacker.level / 5) + 2) * (move.power * attacker.stats[1].base_stat / defender.stats[2].base_stat) / 50) + 2;
     let typeMultiplier = 1;
-    moveData.type.double_damage_to.forEach((type)=>{
+    move.type.double_damage_to.forEach((type)=>{
         if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
             typeMultiplier *= 2;
         }
     });
-    moveData.type.half_damage_to.forEach((type)=>{
+    move.type.half_damage_to.forEach((type)=>{
         if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
             typeMultiplier *= 0.5;
         }
     });
-    moveData.type.no_damage_to.forEach((type)=>{
+    move.type.no_damage_to.forEach((type)=>{
         if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
             typeMultiplier *= 0;
         }
     });
     damage *= typeMultiplier;
+    damage = Math.round(damage);
+    console.log("damage",damage)
+    return {damage,typeMultiplier};
+}
+
+const attack = async(attacker,defender,move,save=false)=> {
+    if(attacker.hp <= 0 || defender.hp <= 0 || !move){
+        return {attacker,defender,damage:0,typeMultiplier:1,move};
+    }
+    //let damage = move.power * attacker.level;
+    let {damage,typeMultiplier} = getDamage(attacker,defender,move);
     defender.hp -= damage;
     if(defender.hp < 0){
         defender.hp = 0;
