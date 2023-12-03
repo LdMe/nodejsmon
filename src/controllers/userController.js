@@ -20,8 +20,18 @@ const addPokemonToUser = async (username, pokemon) => {
     }
 }
 
+const fixStatMultiplier = (stats) => {
+    for (const stat of stats) {
+        stat.multiplier = 1;
+    }
+    return stats;
+}
 const getUserPokemons = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
+    for (const pokemon of user.pokemons) {
+        pokemon.stats = fixStatMultiplier(pokemon.stats);
+        pokemon.save();
+    }
     return user.pokemons;
 }
 /*
