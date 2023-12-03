@@ -97,6 +97,15 @@ const getMaxHp = (pokemon) => {
     console.log("hp", hp)
     return hp;
 }
+const randomizeStatValues = (stats) => {
+    const newStats = [...stats];
+    for (let i = 0; i < newStats.length; i++) {
+        const randomValue = 0.75 + Math.random() * 0.5;
+        newStats[i].base_stat = Math.floor(newStats[i].base_stat * randomValue);
+    }
+    return newStats;
+}
+
 const getNewPokemon = async (id,level=5)=>{
     try {
         level = Math.min(level,100);
@@ -106,6 +115,7 @@ const getNewPokemon = async (id,level=5)=>{
         const availableMoves = filterMovesByLevel(pokemon.moves, level);
         const activeMoves = await getNRandomUniqueMoves(availableMoves, 4);
         const isShiny = Math.random() < 0.1;
+        pokemon.stats = randomizeStatValues(pokemon.stats);
         const newPokemon = {
             name: pokemon.name,
             level: level,
