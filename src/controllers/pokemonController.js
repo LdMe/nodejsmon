@@ -125,7 +125,7 @@ const getName = (names,language) => {
     }
 }
 
-const getNewPokemon = async (id,level=5,fromEvolution=false)=>{
+const getNewPokemon = async (id,level=5,fromEvolution=false,stats=null)=>{
     try {
         level = Math.min(level,100);
         const pokemon = await fetchPokemon(id);
@@ -134,7 +134,12 @@ const getNewPokemon = async (id,level=5,fromEvolution=false)=>{
         const availableMoves = filterMovesByLevel(pokemon.moves, level);
         const activeMoves = await getNRandomUniqueMoves(availableMoves, 4);
         const isShiny = Math.random() < 0.1;
-        pokemon.stats = randomizeStatValues(pokemon.stats);
+        if(stats){
+            pokemon.stats  = copyStatMultipliers(stats,pokemon.stats);
+        }
+        else{
+            pokemon.stats = randomizeStatValues(pokemon.stats);
+        }
         const types  = await getTypesData(pokemon);
         const newPokemon = {
             name: pokemon.name,
@@ -244,12 +249,17 @@ const evolve = async (pokemon) => {
     if(evolution.name === pokemon.name){
         return pokemon;
     }
-    const evolvedPokemon = await getNewPokemon(evolution.name,pokemon.level,true);
+    const evolvedPokemon = await getNewPokemon(evolution.name,pokemon.level,true,pokemon.stats);
     evolvedPokemon._id = pokemon._id;
     evolvedPokemon.shiny = pokemon.isShiny;
     evolvedPokemon.activeMoves = pokemon.activeMoves;
-    evolvedPokemon.hp = pokemon.hp/ pokemon.maxHp * evolvedPokemon.maxHp;
-    evolvedPokemon.stats = copyStatMultipliers(pokemon.stats,evolvedPokemon.stats);
+    console.log("hp",pokemon.hp);
+    console.log("maxHp",pokemon.maxHp);
+    console.log("evolvedPokemon.maxHp",evolvedPokemon.maxHp);
+    const hpRatio = Math.min(pokemon.hp / pokemon.maxHp,1);
+    console.log("hpRatio",hpRatio);
+    evolvedPokemon.hp = Math.min(Math.round( hpRatio * evolvedPokemon.maxHp),evolvedPokemon.maxHp);
+    console.log("evolvedPokemon.hp",evolvedPokemon.hp);
     /* update pokemon in db */
     if(pokemon._id){
         const newPokemon = await updatePokemon(evolvedPokemon);
@@ -410,6 +420,7 @@ const attack = async(attacker,defender,move,save=false)=> {
     //let damage = move.power * attacker.level;
     let {damage,typeMultiplier} = getDamage(attacker,defender,move);
     defender.hp -= damage;
+    defender.hp = Math.round(defender.hp);
     if(defender.hp < 0){
         defender.hp = 0;
     }
