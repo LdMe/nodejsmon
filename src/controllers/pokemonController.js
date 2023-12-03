@@ -125,7 +125,7 @@ const getName = (names,language) => {
     }
 }
 
-const getNewPokemon = async (id,level=5)=>{
+const getNewPokemon = async (id,level=5,fromEvolution=false)=>{
     try {
         level = Math.min(level,100);
         const pokemon = await fetchPokemon(id);
@@ -154,7 +154,10 @@ const getNewPokemon = async (id,level=5)=>{
             shiny:isShiny
     
         }
-        const devolved = await deEvolve(newPokemon);
+        if(fromEvolution){
+            return newPokemon;
+        }
+        const devolved = await evolve(newPokemon);
         return devolved;
     } catch (error) {
         console.error(error);
@@ -189,7 +192,7 @@ const isEvolving = (pokemon) => {
         return false;
     }
     const evolution = pokemon.evolutions.find((evolution) => {
-        return evolution.level === pokemon.level;
+        return evolution.level <= pokemon.level && evolution.trigger === "level-up" && evolution.name !== pokemon.name;
     });
     return evolution !== undefined;
 }
@@ -213,52 +216,39 @@ const updatePokemon = async (pokemon) => {
     return pokemonFromDb;
 
 }
-/*
-funcion que deEvoluciona un pokemon. Si un pokemon tiene un nivel menor al de su evolucion previa, se deevoluciona
-*/
-const deEvolve = async (pokemon) => {
-    console.log("deevolve",pokemon.evolutions)
-    const levelUpEvolutions = pokemon.evolutions.filter((evolution) => {
-        return evolution.trigger === "level-up";
-    });
-    const evolutionNamesAndLevels = levelUpEvolutions.map((evolution) => {
-        return { name: evolution.name, level: evolution.level };
-    }
-    );
-    const originalEvolution = evolutionNamesAndLevels.find((evolution) => evolution.name === pokemon.name);
-    if (!originalEvolution) {
-        return pokemon;
-    }
-    const originalLevel = originalEvolution.level;
-    const previousEvolutions = evolutionNamesAndLevels.filter((evolution) => evolution.level < originalLevel);
-    if (previousEvolutions.length === 0) {
-        return pokemon;
-    }
-    const previousEvolution = previousEvolutions[previousEvolutions.length - 1];
-    const deEvolvedPokemon = await getNewPokemon(previousEvolution.name,pokemon.level);
-    deEvolvedPokemon._id = pokemon._id;
-    deEvolvedPokemon.shiny = pokemon.isShiny;
 
-    /* update pokemon in db */
-    if(pokemon._id){
-        const newPokemon = await updatePokemon(deEvolvedPokemon);
-        return newPokemon;
-    }
-    return deEvolvedPokemon;
-
-}
 const evolve = async (pokemon) => {
     if(!isEvolving(pokemon)){
         return pokemon;
     }
-    const evolution = pokemon.evolutions.find((evolution) => {
-        return evolution.level === pokemon.level;
+    const sortedEvolutions = pokemon.evolutions.sort((a,b)=>{return a.level - b.level});
+    const lowerEvolutions = sortedEvolutions.filter((evolution)=>{return evolution.level <= pokemon.level});
+    if(lowerEvolutions.length === 0){
+        return pokemon;
+    }
+    const originalEvolution = pokemon.evolutions.find((evolution) => {
+        return evolution.name === pokemon.name;
     });
-    const evolvedPokemon = await getNewPokemon(evolution.name,pokemon.level);
+    if(!originalEvolution){
+        return pokemon;
+    }
+    const originalEvolutionIndex = pokemon.evolutions.indexOf(originalEvolution);
+    if(originalEvolutionIndex === -1){
+        return pokemon;
+    }
+    let evolution = lowerEvolutions[lowerEvolutions.length - 1];
+    if(originalEvolutionIndex < lowerEvolutions.length - 1){
+        evolution = lowerEvolutions[originalEvolutionIndex + 1];
+    }
+
+    if(evolution.name === pokemon.name){
+        return pokemon;
+    }
+    const evolvedPokemon = await getNewPokemon(evolution.name,pokemon.level,true);
     evolvedPokemon._id = pokemon._id;
     evolvedPokemon.shiny = pokemon.isShiny;
     evolvedPokemon.activeMoves = pokemon.activeMoves;
-    evolvedPokemon.hp = pokemon.hp;
+    evolvedPokemon.hp = pokemon.hp/ pokemon.maxHp * evolvedPokemon.maxHp;
     evolvedPokemon.stats = copyStatMultipliers(pokemon.stats,evolvedPokemon.stats);
     /* update pokemon in db */
     if(pokemon._id){
