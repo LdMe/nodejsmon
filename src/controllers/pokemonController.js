@@ -113,8 +113,14 @@ const copyStatMultipliers = (statsFrom,statsTo) => {
 }
 
 const getName = (names,language) => {
-    const name = names.find((name)=>{return name.language.name === language});
-    return name ? name.name : names[0].name;
+    try{
+        const name = names.find((name)=>{return name.language.name === language});
+        return name ? name.name : names[0].name;
+    }
+    catch(error){
+        console.error(error);
+        return names[0].name;
+    }
 }
 
 const getNewPokemon = async (id,level=5)=>{
@@ -127,10 +133,9 @@ const getNewPokemon = async (id,level=5)=>{
         const activeMoves = await getNRandomUniqueMoves(availableMoves, 4);
         const isShiny = Math.random() < 0.1;
         pokemon.stats = randomizeStatValues(pokemon.stats);
-        const nameEs = getName(pokemon.names,"es");
+        const types  = await getTypesData(pokemon);
         const newPokemon = {
             name: pokemon.name,
-            nameEs:nameEs,
             level: level,
             sprites: pokemon.sprites,
             types: pokemon.types,
@@ -143,11 +148,13 @@ const getNewPokemon = async (id,level=5)=>{
             maxHp: getMaxHp(pokemon),
             hp: getMaxHp(pokemon),
             id: pokemon.id,
+            types: types,
             shiny:isShiny
     
         }
         return newPokemon;
     } catch (error) {
+        console.error(error);
         return null;
     }
 
@@ -231,7 +238,6 @@ const addMove = async(pokemon,move)=>{
     newPokemon.activeMoves.push(moveData);
     if(newPokemon.activeMoves.length > 4){
         const originalOrder = pokemon.activeMoves.map((move)=>{return move.name});
-        console.log("originalOrder",originalOrder)
         const activeMoves = [...newPokemon.activeMoves]
         activeMoves.sort((a,b)=>{return b.power - a.power});
         while(activeMoves.length > 4){
@@ -271,14 +277,11 @@ const addLevel = async(pokemon) => {
     await dbPokemon.save();
     const evolvedPokemon = await evolve(dbPokemon);
     pokemon = evolvedPokemon;
-    console.log("pokemon",pokemon)
 
     const availableMoves = filterMovesByLevel(pokemon.moves, pokemon.level);
     const levelMoves = availableMoves.filter((move) => {
         return move.version_group_details[0].level_learned_at === pokemon.level;
     });
-    console.log("availableMoves",availableMoves.map((move)=>{return move.move.name+" " + move.version_group_details[0].level_learned_at}));
-    console.log("levelMoves",levelMoves.map((move)=>{return move.move.name + " " + move.version_group_details[0].level_learned_at}));
     for(const move of levelMoves){
         pokemon = await addMove(pokemon,move);
     }
@@ -294,7 +297,16 @@ const getPokemonsFromDb = async (req, res) => {
         res.status(404).json({ message: error.message });
     }
 }
-
+const getTypesData = async (pokemon) => {
+    const types = pokemon.types;
+    
+    const typesData = await Promise.all(types.map(async (type) => {
+        const typeData = await getTypeData(type.type);
+        return typeData;
+    }));
+    return typesData;
+}
+    
 const getTypeData = async(type) =>{
     const url = type.url;
     const response = await fetch(url);
@@ -312,6 +324,7 @@ const getMoveData = async(move) =>{
     const url = move.move.url;
     const response = await fetch(url);
     const data = await response.json()
+    console.log("data.type",data.type)
     const typeData = await getTypeData(data.type);
     data.type = typeData;
     return {
@@ -337,18 +350,19 @@ const getDamage = (attacker,defender,move) =>{
     const defense = Math.round(defender.stats[2].base_stat * defender.stats[2].multiplier);
     let damage = (((2 * attacker.level / 5) + 2) * (move.power * attack / defense) / 50) + 2;
     let typeMultiplier = 1;
+    console.log("move.type",move.type)
     move.type.double_damage_to.forEach((type)=>{
-        if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
+        if(defender.types.find((pokemonType)=>{return pokemonType.name === type.name})){
             typeMultiplier *= 2;
         }
     });
     move.type.half_damage_to.forEach((type)=>{
-        if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
+        if(defender.types.find((pokemonType)=>{return pokemonType.name === type.name})){
             typeMultiplier *= 0.5;
         }
     });
     move.type.no_damage_to.forEach((type)=>{
-        if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
+        if(defender.types.find((pokemonType)=>{return pokemonType.name === type.name})){
             typeMultiplier *= 0;
         }
     });
