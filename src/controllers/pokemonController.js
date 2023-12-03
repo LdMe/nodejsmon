@@ -235,10 +235,9 @@ const deEvolve = async (pokemon) => {
         return pokemon;
     }
     const previousEvolution = previousEvolutions[previousEvolutions.length - 1];
-    const deEvolvedPokemon = await getNewPokemon(previousEvolution.name,previousEvolution.level);
+    const deEvolvedPokemon = await getNewPokemon(previousEvolution.name,pokemon.level);
     deEvolvedPokemon._id = pokemon._id;
     deEvolvedPokemon.shiny = pokemon.isShiny;
-    deEvolvedPokemon.level = pokemon.level;
 
     /* update pokemon in db */
     if(pokemon._id){
