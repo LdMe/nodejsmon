@@ -232,7 +232,9 @@ const evolve = async (pokemon) => {
 }
 const addMove = async(pokemon,move)=>{
     
-    
+    if(pokemon.activeMoves.find((activeMove)=>{return activeMove.name === move.name})){
+        return pokemon;
+    }
     const moveData = await getMoveData(move);
     const newPokemon =  await Pokemon.findById(pokemon._id);
     newPokemon.activeMoves.push(moveData);
