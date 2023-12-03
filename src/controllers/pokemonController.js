@@ -239,8 +239,11 @@ const addMove = async(pokemon,move)=>{
     const newPokemon =  await Pokemon.findById(pokemon._id);
     newPokemon.activeMoves.push(moveData);
     if(newPokemon.activeMoves.length > 4){
-        const originalOrder = pokemon.activeMoves.map((move)=>{return move.name});
-        const activeMoves = [...newPokemon.activeMoves]
+        let originalOrder = pokemon.activeMoves.map((move)=>{return move.name});
+        originalOrder = new Set(originalOrder);
+        originalOrder = [...originalOrder];
+        const activeMovesSet =new Set([...newPokemon.activeMoves]);
+        const activeMoves = [...activeMovesSet];
         activeMoves.sort((a,b)=>{return b.power - a.power});
         while(activeMoves.length > 4){
             activeMoves.pop();
