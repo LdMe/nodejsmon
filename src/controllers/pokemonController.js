@@ -87,13 +87,12 @@ const getNRandomUniqueMoves = async (moves, n) => {
     return chosenMoves;
 }
 const getMaxHp = (pokemon) => {
-    console.log("basew_state",pokemon.stats[0].base_stat)
-    const firstPart = 2 * parseInt(pokemon.stats[0].base_stat) * pokemon.level;
-    console.log("firstPart", firstPart)
-    const secondPart = Math.floor(0.01 * firstPart + 10 + pokemon.level);
-    console.log("secondPart", secondPart)
+    if(!pokemon.stats[0].multiplier){
+        pokemon.stats[0].multiplier = 1;
+    }
+    const baseHp = Math.round(pokemon.stats[0].base_stat * pokemon.stats[0].multiplier);
 
-    const hp = Math.floor(0.01 * (2 * parseInt(pokemon.stats[0].base_stat) ) * pokemon.level + 10 + pokemon.level);
+    const hp = Math.floor(0.01 * (2 * parseInt(baseHp) ) * pokemon.level + 10 + pokemon.level);
     console.log("hp", hp)
     return hp;
 }
@@ -101,9 +100,16 @@ const randomizeStatValues = (stats) => {
     const newStats = [...stats];
     for (let i = 0; i < newStats.length; i++) {
         const randomValue = 0.75 + Math.random() * 0.5;
-        newStats[i].base_stat = Math.floor(newStats[i].base_stat * randomValue);
+        newStats[i].multiplier = randomValue;
     }
     return newStats;
+}
+
+const copyStatMultipliers = (statsFrom,statsTo) => {
+    for (let i = 0; i < statsFrom.length; i++) {
+        statsTo[i].multiplier = statsFrom[i].multiplier || 1;
+    }
+    return statsTo;
 }
 
 const getNewPokemon = async (id,level=5)=>{
@@ -202,6 +208,7 @@ const evolve = async (pokemon) => {
     evolvedPokemon.shiny = pokemon.isShiny;
     evolvedPokemon.activeMoves = pokemon.activeMoves;
     evolvedPokemon.hp = pokemon.hp;
+    evolvedPokemon.stats = copyStatMultipliers(pokemon.stats,evolvedPokemon.stats);
     /* update pokemon in db */
     if(pokemon._id){
         const newPokemon = await updatePokemon(evolvedPokemon);
@@ -311,12 +318,15 @@ const getMoveData = async(move) =>{
 
 
 const getDamage = (attacker,defender,move) =>{
-    console.log("attacker level",attacker.level)
-    console.log("attacker stats",attacker.stats[1].base_stat)
-    console.log("defender stats",defender.stats[2].base_stat)
-    console.log("move power",move.power)
-
-    let damage = (((2 * attacker.level / 5) + 2) * (move.power * attacker.stats[1].base_stat / defender.stats[2].base_stat) / 50) + 2;
+    if(!attacker.stats[1].multiplier){
+        attacker.stats[1].multiplier = 1;
+    }
+    if(!defender.stats[2].multiplier){
+        defender.stats[2].multiplier = 1;
+    }
+    const attack = Math.round(attacker.stats[1].base_stat * attacker.stats[1].multiplier);
+    const defense = Math.round(defender.stats[2].base_stat * defender.stats[2].multiplier);
+    let damage = (((2 * attacker.level / 5) + 2) * (move.power * attack / defense) / 50) + 2;
     let typeMultiplier = 1;
     move.type.double_damage_to.forEach((type)=>{
         if(defender.types.find((pokemonType)=>{return pokemonType.type.name === type.name})){
@@ -335,7 +345,6 @@ const getDamage = (attacker,defender,move) =>{
     });
     damage *= typeMultiplier;
     damage = Math.round(damage);
-    console.log("damage",damage)
     return {damage,typeMultiplier};
 }
 
@@ -370,7 +379,6 @@ export default {
     filterMovesByLevel,
     getNRandomUniqueMoves,
     isEvolving,
-    evolve,
     getPokemonsFromDb,
     getNewPokemon,
     addLevel,
