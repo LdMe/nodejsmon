@@ -1,6 +1,8 @@
 import { getName } from './utils.js';
 import { getTypeData } from './typeController.js';
 import { fetchData } from './utils.js';
+import Pokemon from '../../models/pokemon.js';
+
 
 const filterMovesByLevel = (moves, level) => {
     const filteredMoves = moves.filter((move) => {

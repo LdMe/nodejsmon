@@ -3,7 +3,8 @@ import Pokemon from "../../models/pokemon.js";
 import { getTypesData } from "./typeController.js"; 
 import { filterMovesByLevel, getNRandomUniqueMovesForLevel} from "./moveController.js";
 import { getMaxHp, randomizeStatValues, copyStatMultipliers } from "./statsController.js";
-import { evolve, isEvolving, getEvolutions } from "./evolutionController.js";
+import { evolve,  getEvolutions } from "./evolutionController.js";
+import { addMove } from "./moveController.js";
 import { fetchData } from "./utils.js";
 
 const pokemonUrl = 'https://pokeapi.co/api/v2/pokemon';
