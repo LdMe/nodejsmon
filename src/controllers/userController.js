@@ -1,6 +1,5 @@
 import User from "../models/user.js";
 import Pokemon from "../models/pokemon.js";
-import pokemonController from "./pokemonController.js";
 
 const addPokemonToUser = async (username, pokemon) => {
     const user = await User.findOne({ username });
