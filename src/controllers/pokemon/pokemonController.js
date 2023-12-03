@@ -35,9 +35,7 @@ const getNewPokemon = async (id,level=5,stats=null,activeMoves=[])=>{
         pokemon.evolutions = evolutions;
         const evolvedName = evolve(pokemon);
         if(evolvedName && evolvedName !== pokemon.name){
-            console.log("evolvedName",evolvedName)
             pokemon = await fetchPokemon(evolvedName);
-            console.log("pokemon",pokemon)
             pokemon.level = level;
             evolutions = await getEvolutions(pokemon);
             pokemon.evolutions = evolutions;
@@ -171,7 +169,6 @@ const getDamage = (attacker,defender,move) =>{
     const defense = Math.round(defender.stats[2].base_stat * defender.stats[2].multiplier);
     let damage = (((2 * attacker.level / 5) + 2) * (move.power * attack / defense) / 50) + 2;
     let typeMultiplier = 1;
-    console.log("move.type",move.type)
     move.type.double_damage_to.forEach((type)=>{
         if(defender.types.find((pokemonType)=>{return pokemonType.name === type.name})){
             typeMultiplier *= 2;
