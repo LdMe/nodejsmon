@@ -112,6 +112,11 @@ const copyStatMultipliers = (statsFrom,statsTo) => {
     return statsTo;
 }
 
+const getName = (names,language) => {
+    const name = names.find((name)=>{return name.language.name === language});
+    return name ? name.name : names[0].name;
+}
+
 const getNewPokemon = async (id,level=5)=>{
     try {
         level = Math.min(level,100);
@@ -122,8 +127,10 @@ const getNewPokemon = async (id,level=5)=>{
         const activeMoves = await getNRandomUniqueMoves(availableMoves, 4);
         const isShiny = Math.random() < 0.1;
         pokemon.stats = randomizeStatValues(pokemon.stats);
+        const nameEs = getName(pokemon.names,"es");
         const newPokemon = {
             name: pokemon.name,
+            nameEs:nameEs,
             level: level,
             sprites: pokemon.sprites,
             types: pokemon.types,
@@ -294,6 +301,7 @@ const getTypeData = async(type) =>{
     const data = await response.json()
     return {
         name:data.name,
+        nameEs: getName(data.names,"es"),
         double_damage_to:data.damage_relations.double_damage_to,
         half_damage_to:data.damage_relations.half_damage_to,
         no_damage_to:data.damage_relations.no_damage_to,
@@ -308,6 +316,7 @@ const getMoveData = async(move) =>{
     data.type = typeData;
     return {
         name:data.name,
+        nameEs: getName(data.names,"es"),
         power:data.power || 0,
         accuracy:data.accuracy,
         type:data.type,
