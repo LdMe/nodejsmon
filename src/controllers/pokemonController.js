@@ -1,5 +1,6 @@
 import { get } from "mongoose";
 import Pokemon from "../models/pokemon.js";
+import e from "cors";
 
 const pokemonUrl = 'https://pokeapi.co/api/v2/pokemon';
 
@@ -20,6 +21,7 @@ const getEvolutionChain = async( species )=>{
 const getEvolutionChainData = async( evolutionChain )=>{
     const chain = evolutionChain.chain;
     const evolutionChainData = [];
+    evolutionChainData.push({name:chain.species.name,level:0,trigger:"level-up"});
     let evolvesTo = chain.evolves_to;
     while(evolvesTo.length > 0){
         const evolution = evolvesTo[0];
@@ -152,7 +154,8 @@ const getNewPokemon = async (id,level=5)=>{
             shiny:isShiny
     
         }
-        return newPokemon;
+        const devolved = await deEvolve(newPokemon);
+        return devolved;
     } catch (error) {
         console.error(error);
         return null;
@@ -208,6 +211,41 @@ const updatePokemon = async (pokemon) => {
     pokemonFromDb.shiny = pokemon.shiny;
     await pokemonFromDb.save();
     return pokemonFromDb;
+
+}
+/*
+funcion que deEvoluciona un pokemon. Si un pokemon tiene un nivel menor al de su evolucion previa, se deevoluciona
+*/
+const deEvolve = async (pokemon) => {
+    console.log("deevolve",pokemon.evolutions)
+    const levelUpEvolutions = pokemon.evolutions.filter((evolution) => {
+        return evolution.trigger === "level-up";
+    });
+    const evolutionNamesAndLevels = levelUpEvolutions.map((evolution) => {
+        return { name: evolution.name, level: evolution.level };
+    }
+    );
+    const originalEvolution = evolutionNamesAndLevels.find((evolution) => evolution.name === pokemon.name);
+    if (!originalEvolution) {
+        return pokemon;
+    }
+    const originalLevel = originalEvolution.level;
+    const previousEvolutions = evolutionNamesAndLevels.filter((evolution) => evolution.level < originalLevel);
+    if (previousEvolutions.length === 0) {
+        return pokemon;
+    }
+    const previousEvolution = previousEvolutions[previousEvolutions.length - 1];
+    const deEvolvedPokemon = await getNewPokemon(previousEvolution.name,previousEvolution.level);
+    deEvolvedPokemon._id = pokemon._id;
+    deEvolvedPokemon.shiny = pokemon.isShiny;
+    deEvolvedPokemon.level = pokemon.level;
+
+    /* update pokemon in db */
+    if(pokemon._id){
+        const newPokemon = await updatePokemon(deEvolvedPokemon);
+        return newPokemon;
+    }
+    return deEvolvedPokemon;
 
 }
 const evolve = async (pokemon) => {
