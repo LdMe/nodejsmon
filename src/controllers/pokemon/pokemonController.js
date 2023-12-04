@@ -197,6 +197,7 @@ const attack = async(attacker,defender,move,save=false)=> {
     //let damage = move.power * attacker.level;
     let {damage,typeMultiplier} = getDamage(attacker,defender,move);
     defender.hp -= damage;
+    
     defender.hp = Math.round(defender.hp);
     if(defender.hp < 0){
         defender.hp = 0;
