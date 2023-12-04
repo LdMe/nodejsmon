@@ -7,24 +7,31 @@ dotenv.config();
 
 
 const register = async (req, res) => {
-    const { username, password, passwordConfirm } = req.body;
-    const oldUser =await User.findOne({ username });
-    if (oldUser) {
-        res.status(400).send("User already exists");
-        return;
+    try{
+        const { username, password, passwordConfirm } = req.body;
+        const oldUser =await User.findOne({ username });
+        if (oldUser) {
+            res.status(400).send("User already exists");
+            return;
+        }
+        if (password !== passwordConfirm) {
+            res.status(400).send("Passwords do not match");
+            return;
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ username, password: hashedPassword });
+        await user.save();
+        res.json(user);
     }
-    if (password !== passwordConfirm) {
-        res.status(400).send("Passwords do not match");
-        return;
+    catch (e) {
+        console.error(e);
+        res.status(500).send("Error registering user");
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword });
-    await user.save();
-    res.json(user);
 }
 
 const login = async (req, res) => {
-    const { username, password } = req.body;
+    try {
+        const { username, password } = req.body;
     const oldUser = await User.findOne({ username });
     if (!oldUser) {
         res.status(404).send("User does not exist");
@@ -39,7 +46,7 @@ const login = async (req, res) => {
     /* send token in a cookie */
     res.cookie("token", token, { 
         httpOnly: true,
-        secure: false,
+        secure: true,
         sameSite: 'none',
         maxAge: 3600000
 
@@ -53,6 +60,12 @@ const login = async (req, res) => {
         },
         token
     });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).send("Error loggin user")
+    }
+    
 }
 
 const logout = async (req, res) => {
