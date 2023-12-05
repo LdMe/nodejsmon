@@ -155,6 +155,16 @@ const getPokemonsFromDb = async (req, res) => {
     }
 }
 
+const getPokemonByIdFromDb = async (id) => {
+    try {
+        const pokemon = await Pokemon.findById(id);
+        return pokemon;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
 
 
 
@@ -227,6 +237,7 @@ export default {
     addLevel,
     getNewRandomPokemon,
     getStarterPokemons,
-    attack
+    attack,
+    getPokemonByIdFromDb
 
 }

@@ -4,6 +4,7 @@ import { Router } from "express";
 
 const router = Router();
 
+
 router.get("/pokemons", async(req, res) => {
     try {
         const username = req.user.username;
@@ -77,5 +78,20 @@ router.delete("/pokemons/:id", async(req, res) => {
         res.status(404).send("usuario no encontrado");
     }
 });
-
+router.get("/data/:username", async(req, res) => {
+    try {
+        const username = req.params.username;
+        const user = await userController.getUser(username);
+        if (!user) {
+            res.status(404).send("usuario no encontrado");
+            return;
+        }
+        res.send(user);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send("Error interno");
+    }
+}
+);
 export default router;

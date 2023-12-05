@@ -40,7 +40,7 @@ socketIo.on('connection', (socket) => {
             if (index === -1) {
                 return;
             }
-            const username = members[index].user.username;
+            const username = members[index].username;
             members.splice(index, 1);
             socketIo.to(MAIN_ROOM).emit('leave', username);
             console.log(`socket ${socket.id} disconnected`);
@@ -51,13 +51,14 @@ socketIo.on('connection', (socket) => {
     })
     socket.on('join', (data) => {
         try {
-            console.log('user joined room ' + data.room);
-            socketIo.to(data.room).emit('join', data.user);
+            console.log(data);
+            console.log(`user ${data.username} joined room ${data.room}`);
+            socketIo.to(data.room).emit('join', data.username);
             socket.join(data.room);
-            socket.emit('members', members.map(member => member.user));
-            const oldMember = members.find(member => member.user.username === data.user.username);
+            socket.emit('members', members.map(member => member.username));
+            const oldMember = members.find(member => member.username === data.username);
             if (!oldMember) {
-                members.push({ user: data.user, socketId: socket.id });
+                members.push({ username: data.username, socketId: socket.id });
             }
             else {
                 oldMember.socketId = socket.id;
@@ -70,10 +71,10 @@ socketIo.on('connection', (socket) => {
     });
     socket.on('leave', (data) => {
         try {
-            console.log('user left room ' + data.room);
-            socketIo.to(data.room).emit('leave', data.user.username);
+            console.log(`user ${data.username} left room ${data.room}`);
+            socketIo.to(data.room).emit('leave', data.username);
             socket.leave(data.room);
-            const index = members.findIndex(member => member.user.username === data.user.username);
+            const index = members.findIndex(member => member.username === data.username);
             if (index !== -1) {
                 members.splice(index, 1);
             }
@@ -93,15 +94,15 @@ socketIo.on('connection', (socket) => {
     });
     socket.on('ask-to-fight', (data) => {
         try {
-            console.log('ask-to-fight: ' + data);
+            console.log('ask-to-fight: ' + JSON.stringify(data));
             const userFrom = members.find(member => member.socketId === socket.id);
-            console.log("username: " + data.user.username)
-            const userTo = members.find(member => member.user.username === data.user.username);
+            console.log("username: " + data.username)
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;
             }
-            socketIo.to(userTo.socketId).emit('ask-to-fight', userFrom.user);
+            socketIo.to(userTo.socketId).emit('ask-to-fight', userFrom.username);
         }
         catch (e) {
             console.error(e);
@@ -111,13 +112,13 @@ socketIo.on('connection', (socket) => {
         try {
             console.log('accept-fight: ' + data);
             const userFrom = members.find(member => member.socketId === socket.id);
-            console.log("username: " + data.user.username)
-            const userTo = members.find(member => member.user.username === data.user.username);
+            console.log("username: " + data.username)
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;
             }
-            socketIo.to(userTo.socketId).emit('accept-fight', userFrom.user);
+            socketIo.to(userTo.socketId).emit('accept-fight', userFrom.username);
         }
         catch (e) {
             console.error(e);
@@ -127,13 +128,13 @@ socketIo.on('connection', (socket) => {
         try {
             console.log('reject-fight: ' + data);
             const userFrom = members.find(member => member.socketId === socket.id);
-            console.log("username: " + data.user.username)
-            const userTo = members.find(member => member.user.username === data.user.username);
+            console.log("username: " + data.username)
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;
             }
-            socketIo.to(userTo.socketId).emit('reject-fight', userFrom.user);
+            socketIo.to(userTo.socketId).emit('reject-fight', userFrom.username);
         }
         catch (e) {
             console.error(e);
@@ -143,7 +144,7 @@ socketIo.on('connection', (socket) => {
         try {
             const userFrom = members.find(member => member.socketId === socket.id);
             console.log("username: " + data.username)
-            const userTo = members.find(member => member.user.username === data.username);
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;
@@ -156,9 +157,10 @@ socketIo.on('connection', (socket) => {
     });
     socket.on('update', (data) => {
         try {
+            console.log('update: ' + JSON.stringify(data));
             const userFrom = members.find(member => member.socketId === socket.id);
             console.log("username: " + data.username)
-            const userTo = members.find(member => member.user.username === data.username);
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;
@@ -169,11 +171,26 @@ socketIo.on('connection', (socket) => {
             console.error(e);
         }
     });
+    socket.on('swap', (data) => {
+        try {
+            const userFrom = members.find(member => member.socketId === socket.id);
+            console.log("username: " + data.username)
+            const userTo = members.find(member => member.username === data.username);
+            if (!userTo) {
+                console.log('user not found');
+                return;
+            }
+            socketIo.to(userTo.socketId).emit('swap', data);
+        }
+        catch (e) {
+            console.error(e);
+        }
+    });
     socket.on('combat-end', (data) => {
         try {
             const userFrom = members.find(member => member.socketId === socket.id);
             console.log("username: " + data.username)
-            const userTo = members.find(member => member.user.username === data.username);
+            const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
                 return;

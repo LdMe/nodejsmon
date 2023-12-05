@@ -114,6 +114,17 @@ const removePokemon = async (username, id) => {
     }
 }
 
+const getUser   = async (username) => {
+    const user = await User.findOne({ username }).populate("pokemons");
+    if (!user) {
+        return null;
+    }
+    const userData = {
+        username: user.username,
+        pokemons: user.pokemons,
+    }
+    return userData;
+}
 
 export default {
     addPokemonToUser,
@@ -122,4 +133,5 @@ export default {
     healPokemons,
     swapPokemons,
     removePokemon,
+    getUser,
 }

@@ -15,6 +15,13 @@ router.get('/fetch/:id', async(req, res) => {
     try {
         
         const id = req.params.id;
+        // if id is a number, it is the id of the generic pokemon, if it is a string, it is the _id of the pokemon in the database
+        if(isNaN(id)){
+            const pokemon = await pokemonController.getPokemonByIdFromDb(id);
+            res.send(pokemon);
+            return;
+        }
+
         const level = req.query.level || 5;
         const pokemon = await pokemonController.getNewPokemon(id,level);
         res.send(pokemon);
