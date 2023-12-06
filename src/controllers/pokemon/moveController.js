@@ -40,7 +40,13 @@ const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
 
 const getMoveData = async(move) =>{
     const existingMove = await MoveTemplate.findOne({name:move.name});
+    
     if(existingMove){
+        if(!existingMove.type){
+        const type = await getTypeData(existingMove.type);
+        existingMove.type = type;
+        await existingMove.save();
+        }
         if(existingMove.power === null){
             existingMove.power = 0;
             await existingMove.save();
@@ -60,6 +66,7 @@ const getMoveData = async(move) =>{
     return {
         name:data.name,
         nameEs: getName(data.names,"es"),
+        names:data.names,
         power:data.power || 0,
         accuracy:data.accuracy,
         type:data.type,

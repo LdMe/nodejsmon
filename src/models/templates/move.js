@@ -183,7 +183,7 @@ const moveSchema = new Schema({
         name: String,
         url: String,
     },
-},{strict:true});
+},{strict:false});
 
 export default mongoose.model("Move", moveSchema);
 
