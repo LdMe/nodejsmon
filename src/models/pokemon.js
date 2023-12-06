@@ -43,11 +43,15 @@ const pokemonSchema = new Schema({
     },
 });
 
-pokemonSchema.pre("find", function () {
-    this.populate("activeMoves");
-}).pre("findOne", function () {
-    this.populate("activeMoves");
-});
+pokemonSchema.pre("find",  function () {
+     this.populate("activeMoves");
+    /* for(const move of this.activeMoves){
+        await move.populate("type");
+    } */
+}).pre("findOne",  function () {
+     this.populate("activeMoves");
+    
+})
 
 const Pokemon = mongoose.model('Pokemon', pokemonSchema);
 

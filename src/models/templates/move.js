@@ -180,10 +180,16 @@ const moveSchema = new Schema({
         url: String,
     },
     type: {
-        name: String,
-        url: String,
+        type:Schema.Types.ObjectId,
+        ref:"Type",
     },
 },{strict:false});
+
+moveSchema.pre('find', function() {
+    this.populate('type');
+}).pre('findOne', function() {
+    this.populate('type');
+});
 
 export default mongoose.model("Move", moveSchema);
 

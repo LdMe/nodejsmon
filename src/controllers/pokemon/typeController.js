@@ -14,14 +14,7 @@ const getTypesData = async (pokemon) => {
 const getTypeData = async(type) =>{
     const existingType = await TypeTemplate.findOne({name:type.name});
     if(existingType){
-        const typeData = {
-            name:existingType.name,
-            nameEs: getName(existingType.names,"es"),
-            double_damage_to:existingType.damage_relations.double_damage_to,
-            half_damage_to:existingType.damage_relations.half_damage_to,
-            no_damage_to:existingType.damage_relations.no_damage_to,
-        }
-        return typeData;
+        return existingType;
     }
     const url = `${typeUrl}/${type.name}`;
     const [error,data] = await fetchData(url);
@@ -30,13 +23,7 @@ const getTypeData = async(type) =>{
     }
     const typeData = new TypeTemplate(data);
     await typeData.save();
-    return {
-        name:typeData.name,
-        nameEs: getName(typeData.names,"es"),
-        double_damage_to:typeData.damage_relations.double_damage_to,
-        half_damage_to:typeData.damage_relations.half_damage_to,
-        no_damage_to:typeData.damage_relations.no_damage_to,
-    }
+    return typeData;
 }
 
 export {

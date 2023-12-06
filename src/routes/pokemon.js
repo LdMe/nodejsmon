@@ -8,6 +8,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/fetch/random', async(req, res) => {
+    try {
     const level = req.query.level || 5;
     const pokemon = await pokemonController.getNewRandomPokemon(level);
     const user = req.user;
@@ -18,6 +19,11 @@ router.get('/fetch/random', async(req, res) => {
         await userDb.save();
     }
     res.send(pokemon);
+    }
+    catch(error){
+        console.error(error);
+        res.status(500).send("error al buscar pokemon");
+    }
 });
 router.get('/fetch/:id', async(req, res) => {
     try {
