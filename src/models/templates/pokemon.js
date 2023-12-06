@@ -81,6 +81,7 @@ const pokemonTemplateSchema = new Schema({
     },
     stats: [{
         base_stat: Number,
+        multiplier: Number,
         effort: Number,
         stat: {
             name: String,

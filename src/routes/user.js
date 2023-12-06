@@ -19,7 +19,8 @@ router.get("/pokemons", async(req, res) => {
 router.post("/pokemons", async(req, res) => {
     try {
         const username = req.user.username;
-        const pokemon = req.body;
+        const pokemon = req.body.pokemon;
+        console.log("adding pokemon to user", username, pokemon);
         const user = await userController.addPokemonToUser(username, pokemon);
         res.send(user);
     }

@@ -24,7 +24,10 @@ const pokemonSchema = new Schema({
     name: String,
     sprites: Object,
     types: Array,
-    activeMoves: Array,
+    activeMoves: [{
+        type: Schema.Types.ObjectId,
+        ref: "Move",
+    }],
     moves: Array,
     level: Number,
     hp: Number,
@@ -34,6 +37,16 @@ const pokemonSchema = new Schema({
     stats: Array,
     shiny: Boolean,
     species: Object,
+    owner: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+    },
+});
+
+pokemonSchema.pre("find", function () {
+    this.populate("activeMoves");
+}).pre("findOne", function () {
+    this.populate("activeMoves");
 });
 
 const Pokemon = mongoose.model('Pokemon', pokemonSchema);
