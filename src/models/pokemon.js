@@ -33,6 +33,7 @@ const pokemonSchema = new Schema({
     evolutions: Array,
     stats: Array,
     shiny: Boolean,
+    species: Object,
 });
 
 const Pokemon = mongoose.model('Pokemon', pokemonSchema);

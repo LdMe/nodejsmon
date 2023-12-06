@@ -10,6 +10,7 @@ const getName = (names,language) => {
 }
 
 const fetchData = async (url,options) => {
+    console.log("fetching data",url)
     try{
         const response = await fetch(url,options);
         const data = await response.json();
