@@ -5,7 +5,7 @@ con jest
 
 import connection from "../../src/config/db.js";
 import Pokemon from "../../src/models/pokemon.js";
-import pokemonController from "../../src/controllers/pokemonController.js";
+import pokemonController from "../../src/controllers/pokemon/pokemonController.js";
 import dotenv from "dotenv";
 
 

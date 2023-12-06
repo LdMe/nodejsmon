@@ -12,8 +12,8 @@ const uri = `mongodb://${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 const connection  = mongoose.connect(uri).then(()=>{
     console.log("conexion satisfactoria con la base de datos");
 }).catch((e)=>{
-    console.log("error al conectarse")
-    console.log(e);
+    console.error("error al conectarse")
+    console.error(e);
 })
 
 

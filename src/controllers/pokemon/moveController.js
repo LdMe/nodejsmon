@@ -2,8 +2,9 @@ import { getName } from './utils.js';
 import { getTypeData } from './typeController.js';
 import { fetchData } from './utils.js';
 import Pokemon from '../../models/pokemon.js';
+import MoveTemplate from '../../models/templates/move.js';
 
-
+const moveUrl = 'https://pokeapi.co/api/v2/move';
 const filterMovesByLevel = (moves, level) => {
     const filteredMoves = moves.filter((move) => {
         return move.version_group_details[0].level_learned_at <= level && move.version_group_details[0].move_learn_method.name === 'level-up';
@@ -17,8 +18,10 @@ const getNRandomUniqueMoves = async (moves, n) => {
     /* try to get n moves with their data, prioritizing moves with  power */
     while (chosenMoves.length < n && movesToChoose.length > 0) {
         const randomIndex = Math.floor(Math.random() * movesToChoose.length);
-        const move = movesToChoose[randomIndex];
+        const move = movesToChoose[randomIndex].move;
         const moveData = await getMoveData(move);
+        moveData.level_learned_at = movesToChoose[randomIndex].version_group_details[0].level_learned_at;
+        move
         if (moveData.power !== null) {
             chosenMoves.push(moveData);
         }
@@ -35,11 +38,17 @@ const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
 
 
 const getMoveData = async(move) =>{
-    const url = move.move.url;
+    const existingMove = await MoveTemplate.findOne({name:move.name});
+    if(existingMove){
+        return existingMove;
+    }
+    const url = `${moveUrl}/${move.name}`;
     const [error,data] = await fetchData(url);
     if(error){
         throw error;
     }
+    const newMove = new MoveTemplate(data);
+    await newMove.save();
     const typeData = await getTypeData(data.type);
     data.type = typeData;
     return {
@@ -49,7 +58,6 @@ const getMoveData = async(move) =>{
         accuracy:data.accuracy,
         type:data.type,
         url:move.url,
-        level_learned_at:move.version_group_details[0].level_learned_at,
     }
 }
 

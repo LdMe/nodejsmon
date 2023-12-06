@@ -1,5 +1,5 @@
 import userController from "../../src/controllers/userController.js";
-import pokemonController from "../../src/controllers/pokemonController.js";
+import pokemonController from "../../src/controllers/pokemon/pokemonController.js";
 import connection from "../../src/config/db.js";
 
 describe("tests userController", () => {

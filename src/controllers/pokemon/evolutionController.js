@@ -1,6 +1,6 @@
 import { getSpecies } from "./speciesController.js";
 import { fetchData } from "./utils.js";
-
+import EvolutionTemplate from "../../models/templates/evolutionChain.js";
 
 const isEvolving = (pokemon) => {
     if (pokemon.evolutions.length === 0) {
@@ -13,17 +13,27 @@ const isEvolving = (pokemon) => {
 }
 
 const getEvolutionChain = async (species) => {
+    
     const evolutionChainUrl = species.evolution_chain.url;
+    const existingEvolutionChain = await EvolutionTemplate.findOne({ url: evolutionChainUrl });
+    if (existingEvolutionChain) {
+        return existingEvolutionChain;
+    }
     const [error, data] = await fetchData(evolutionChainUrl);
     if (error) {
         throw error;
     }
+    const evolutionChain = new EvolutionTemplate(data);
+    evolutionChain.species = getEvolutionChainData(evolutionChain);
+    evolutionChain.url = evolutionChainUrl;
+    evolutionChain.save();
     return data;
 }
-const getEvolutionChainData = async (evolutionChain) => {
+const getEvolutionChainData = (evolutionChain) => {
     const chain = evolutionChain.chain;
     const evolutionChainData = [];
-    evolutionChainData.push({ name: chain.species.name, level: 0, trigger: "level-up" });
+    const firstTrigger = chain.evolution_details.length > 0 ? chain.evolution_details[0].trigger.name : "level-up";
+    evolutionChainData.push({ name: chain.species.name, level: 0, trigger: firstTrigger, isBaby: chain.is_baby });
     let evolvesTo = chain.evolves_to;
     while (evolvesTo.length > 0) {
         const evolution = evolvesTo[0];
@@ -31,30 +41,19 @@ const getEvolutionChainData = async (evolutionChain) => {
             name: evolution.species.name,
             level: evolution.evolution_details[0].min_level,
             trigger: evolution.evolution_details[0].trigger.name,
+            item: evolution.evolution_details[0].item,
+            isBaby: evolution.is_baby,
         }
         evolutionChainData.push(evolutionData);
         evolvesTo = evolution.evolves_to;
     }
     return evolutionChainData;
-    /* const chain = evolutionChain.chain;
-    const evolutionChainData = [];
-    evolutionChainData.push(chain.species.name);
-    let evolvesTo = chain.evolves_to;
-    while(evolvesTo.length > 0){
-        const evolution = evolvesTo[0];
-        const evolutionData ={
-            name: evolution.species.name,
-            level: evolution.evolution_details[0].min_level,
-        }
-        evolutionChainData.push(evolutionData);
-    }
-    return evolutionChainData; */
 }
 
 const getEvolutions = async (pokemon) => {
     const species = await getSpecies(pokemon);
     const evolutionChain = await getEvolutionChain(species);
-    const evolutionChainData = await getEvolutionChainData(evolutionChain);
+    const evolutionChainData = getEvolutionChainData(evolutionChain);
     return evolutionChainData;
 }
 
