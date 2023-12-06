@@ -127,6 +127,7 @@ const getNewRandomPokemon = async (level = 5) => {
         newPokemon = await getNewPokemon(randomId, level);
 
     }
+    
     const newPokemonDb = new Pokemon(newPokemon);
     await newPokemonDb.save();
     return newPokemonDb;
@@ -225,7 +226,7 @@ const getDamage = async (attacker, defender, moveName) => {
         move.power = 0;
         await move.save();
     }
-    const moveType = await getTypeData(move.type);
+    await move.populate("type");
     if (!attacker.stats[1].multiplier) {
         attacker.stats[1].multiplier = 1;
     }
@@ -237,17 +238,18 @@ const getDamage = async (attacker, defender, moveName) => {
 
     let damage = (((2 * attacker.level / 5) + 2) * (move.power * attack / defense) / 50) + 2;
     let typeMultiplier = 1;
-    moveType.double_damage_to.forEach((type) => {
+    console.log("move type", move.type.name);
+    move.type.damage_relations.double_damage_to.forEach((type) => {
         if (defender.types.find((pokemonType) => { return pokemonType.name === type.name })) {
             typeMultiplier *= 2;
         }
     });
-    moveType.half_damage_to.forEach((type) => {
+    move.type.damage_relations.half_damage_to.forEach((type) => {
         if (defender.types.find((pokemonType) => { return pokemonType.name === type.name })) {
             typeMultiplier *= 0.5;
         }
     });
-    moveType.no_damage_to.forEach((type) => {
+    move.type.damage_relations.no_damage_to.forEach((type) => {
         if (defender.types.find((pokemonType) => { return pokemonType.name === type.name })) {
             typeMultiplier *= 0;
         }

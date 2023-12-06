@@ -52,7 +52,12 @@ const fixStatMultiplier = (stats) => {
 }
 const getUserPokemons = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
-    
+    for(const pokemon of user.pokemons){
+        await pokemon.populate("activeMoves");
+        for (const move of pokemon.activeMoves) {
+            await move.populate("type");
+        }
+    }
     return user.pokemons;
 }
 /*

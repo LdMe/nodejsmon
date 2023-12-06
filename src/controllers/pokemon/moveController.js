@@ -40,11 +40,8 @@ const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
 
 const getMoveData = async(move) =>{
     const existingMove = await MoveTemplate.findOne({name:move.name});
+    
     if(existingMove){
-        if(existingMove.power === null){
-            existingMove.power = 0;
-            await existingMove.save();
-        }
         return existingMove;
     }
     const url = `${moveUrl}/${move.name}`;
@@ -53,18 +50,14 @@ const getMoveData = async(move) =>{
         throw error;
     }
     data.power = data.power || 0;
-    const newMove = new MoveTemplate(data);
-    await newMove.save();
     const typeData = await getTypeData(data.type);
-    data.type = typeData;
-    return {
-        name:data.name,
-        nameEs: getName(data.names,"es"),
-        power:data.power || 0,
-        accuracy:data.accuracy,
-        type:data.type,
-        url:move.url,
-    }
+    
+    const newMove = new MoveTemplate(data);
+    newMove.type = typeData;
+    console.log("newMove",newMove)
+    await newMove.save();
+    
+    return newMove;
 }
 
 const addMove = async(pokemon,move)=>{
