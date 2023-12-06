@@ -259,7 +259,9 @@ const getDamage = async (attacker, defender, moveName) => {
     return { damage, typeMultiplier };
 }
 
-const attack = async (attacker, defender, move, save = false) => {
+const attack = async (attackerId, defenderId, move, save = false) => {
+    let attacker = await getPokemonByIdFromDb(attackerId);
+    let defender = await getPokemonByIdFromDb(defenderId);
     if (attacker.hp <= 0 || defender.hp <= 0 || !move) {
         return { attacker, defender, damage: 0, typeMultiplier: 1, move };
     }
