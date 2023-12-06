@@ -15,8 +15,13 @@ const userSchema = new Schema({
             type: Schema.Types.ObjectId,
             ref: "Pokemon"
         }
-    ]
-});
+    ],
+    enemy:
+    {
+        type: Schema.Types.ObjectId,
+        ref: "Pokemon"
+    },
+},{ strict: false });
 
 const User = mongoose.model('User', userSchema);
 

@@ -1,16 +1,41 @@
 import User from "../models/user.js";
 import Pokemon from "../models/pokemon.js";
-
-const addPokemonToUser = async (username, pokemon) => {
+import { getNewPokemon } from "./pokemon/pokemonController.js";
+const addPokemonToUser = async (username, pokemonId) => {
+    
     const user = await User.findOne({ username });
+    console.log("user", user);
+    
     if (user.pokemons.length >= 6) {
         throw new Error("No puedes tener más de 6 pokemons");
     }
-    const newPokemon = new Pokemon(pokemon);
-    await newPokemon.save();
-    user.pokemons.push(newPokemon);
+    if(user.pokemons.includes(pokemonId)){
+        throw new Error("Ya tienes este pokemon");
+    }
+    let pokemon = null;
+    try {
+        // if pokemonId is a valid id, we search for it in the db
+        if(pokemonId.length === 24){
+            pokemon = await Pokemon.findById(pokemonId);
+        }
+        // if pokemonId is a valid name, we search for it in the db
+        else{
+            console.log("pokemonId", pokemonId)
+            pokemon = await getNewPokemon(pokemonId, 5);
+        }
+        
+    } catch (error) {
+        
+        throw new Error("No se ha encontrado el pokemon");
+    }
+    if(!pokemon._id){
+        pokemon = new Pokemon(pokemon);
+    }
+    pokemon.owner = user._id;
+    await pokemon.save();
+    user.pokemons.push(pokemon);
+
     await user.save();
-    /* populate the pokemons array */
     await user.populate("pokemons")
 
     return {
@@ -27,10 +52,7 @@ const fixStatMultiplier = (stats) => {
 }
 const getUserPokemons = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
-    for (const pokemon of user.pokemons) {
-        pokemon.stats = fixStatMultiplier(pokemon.stats);
-        pokemon.save();
-    }
+    
     return user.pokemons;
 }
 /*
@@ -125,6 +147,21 @@ const getUser   = async (username) => {
     }
     return userData;
 }
+// funcion para eliminar el pokemon salvaje contra el que se ha luchado
+
+const clearFight = async (username) => {
+    try{
+        const user = await User.findOne({ username }).populate("pokemons");
+        if(user.enemy){
+            await Pokemon.findByIdAndDelete(user.enemy);
+            user.enemy = null;
+            await user.save();
+        }
+    }
+    catch(e){
+        console.error(e);
+    }
+}
 
 export default {
     addPokemonToUser,
@@ -134,4 +171,5 @@ export default {
     swapPokemons,
     removePokemon,
     getUser,
+    clearFight
 }

@@ -5,7 +5,7 @@ import router from './routes/router.js';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketIo } from 'socket.io';
-
+import userController from './controllers/userController.js';
 
 dotenv.config();
 const app = express();
@@ -32,15 +32,32 @@ const MAIN_ROOM = 'main';
 const members = [];
 socketIo.on('connection', (socket) => {
     console.log(`socket ${socket.id} connected`);
+
+    socket.on('login', (data) => {
+        console.log(`user ${data.username} logged in`);
+        const oldMember = members.find(member => member.sockerId === socket.id);
+        if (!oldMember) {
+            members.push({ username: data.username, socketId: socket.id });
+        }
+        else {
+            oldMember.socketId = socket.id;
+        }
+    });
+
     socket.on('disconnect', () => {
         try {
             socket.leave(MAIN_ROOM);
             console.log(`socket ${socket.id} disconnected`);
+
             const index = members.findIndex(member => member.socketId === socket.id);
             if (index === -1) {
+                console.log('user not found');
+                console.log(members, socket.id)
                 return;
             }
             const username = members[index].username;
+            console.log("members",members)
+            userController.clearFight(username);
             members.splice(index, 1);
             socketIo.to(MAIN_ROOM).emit('leave', username);
             console.log(`socket ${socket.id} disconnected`);
@@ -56,13 +73,7 @@ socketIo.on('connection', (socket) => {
             socketIo.to(data.room).emit('join', data.username);
             socket.join(data.room);
             socket.emit('members', members.map(member => member.username));
-            const oldMember = members.find(member => member.username === data.username);
-            if (!oldMember) {
-                members.push({ username: data.username, socketId: socket.id });
-            }
-            else {
-                oldMember.socketId = socket.id;
-            }
+
         }
         catch (e) {
             console.error(e);
@@ -74,10 +85,7 @@ socketIo.on('connection', (socket) => {
             console.log(`user ${data.username} left room ${data.room}`);
             socketIo.to(data.room).emit('leave', data.username);
             socket.leave(data.room);
-            const index = members.findIndex(member => member.username === data.username);
-            if (index !== -1) {
-                members.splice(index, 1);
-            }
+
         }
         catch (e) {
             console.error(e);

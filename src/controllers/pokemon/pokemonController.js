@@ -40,7 +40,7 @@ const fetchPokemon = async (idOrName) => {
 }
 
 
-const getNewPokemon = async (id, level = 5, stats = null, activeMoves = []) => {
+const getNewPokemon = async (id, level = 5, stats = null, activeMoves = [],canBeShiny=false) => {
     try {
         level = Math.min(level, 100);
         let pokemon = await fetchPokemon(id);
@@ -57,7 +57,7 @@ const getNewPokemon = async (id, level = 5, stats = null, activeMoves = []) => {
         if (activeMoves.length === 0) {
             activeMoves = await getNRandomUniqueMovesForLevel(pokemon.moves, level, 4);
         }
-        const isShiny = Math.random() < 0.1;
+         const isShiny = canBeShiny && Math.random() < 0.1;
         if (stats) {
             pokemon.stats = copyStatMultipliers(stats, pokemon.stats);
         }
@@ -127,11 +127,13 @@ const getNewRandomPokemon = async (level = 5) => {
         newPokemon = await getNewPokemon(randomId, level);
 
     }
-    return newPokemon;
+    const newPokemonDb = new Pokemon(newPokemon);
+    await newPokemonDb.save();
+    return newPokemonDb;
 }
 const getPokemons = async (idList, level = 5) => {
     const pokemons = await Promise.all(idList.map(async (id) => {
-        const pokemon = await getNewPokemon(id, level);
+        const pokemon = await getNewPokemon(id, level, null, [],false);
         return pokemon;
     }));
     return pokemons;
@@ -139,6 +141,7 @@ const getPokemons = async (idList, level = 5) => {
 
 const getStarterPokemons = async () => {
     const starterPokemons = await getPokemons([1, 4, 7], 5);
+    
     return starterPokemons;
 }
 
@@ -165,13 +168,13 @@ const updatePokemon = async (pokemon) => {
 }
 
 
-const addLevel = async (pokemon) => {
+const addLevel = async (pokemonId) => {
     try {
 
-        if (pokemon.level >= 100) {
-            return pokemon;
+        let dbPokemon = await Pokemon.findById(pokemonId);
+        if (dbPokemon.level >= 100) {
+            return dbPokemon;
         }
-        const dbPokemon = await Pokemon.findById(pokemon._id);
         dbPokemon.level++;
         dbPokemon.maxHp = getMaxHp(dbPokemon);
         await dbPokemon.save();
@@ -180,19 +183,19 @@ const addLevel = async (pokemon) => {
             const evolvedPokemon = await getNewPokemon(evolvedPokemonName, dbPokemon.level, dbPokemon.stats, dbPokemon.activeMoves);
             evolvedPokemon._id = dbPokemon._id;
             evolvedPokemon.hp = dbPokemon.hp;
-            evolvedPokemon.maxHp
-            await updatePokemon(evolvedPokemon);
+            evolvedPokemon.shiny = dbPokemon.shiny;
+            dbPokemon = await updatePokemon(evolvedPokemon);
         }
 
-        const availableMoves = filterMovesByLevel(pokemon.moves, pokemon.level);
+        const availableMoves = filterMovesByLevel(dbPokemon.moves, dbPokemon.level);
         const levelMoves = availableMoves.filter((move) => {
-            return move.version_group_details[0].level_learned_at === pokemon.level;
+            return move.version_group_details[0].level_learned_at === dbPokemon.level;
         });
         for (const move of levelMoves) {
-            pokemon = await addMove(pokemon, move.move);
+             dbPokemon = await addMove(dbPokemon, move.move);
         }
 
-        return pokemon;
+        return dbPokemon;
     }
     catch (error) {
         console.error(error);
@@ -200,14 +203,7 @@ const addLevel = async (pokemon) => {
     }
 }
 
-const getPokemonsFromDb = async (req, res) => {
-    try {
-        const pokemons = await Pokemon.find();
-        res.status(200).json(pokemons);
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-}
+
 
 const getPokemonByIdFromDb = async (id) => {
     try {
@@ -225,6 +221,10 @@ const getPokemonByIdFromDb = async (id) => {
 
 const getDamage = async (attacker, defender, moveName) => {
     const move = await getMoveData(moveName);
+    if(move.power === null){
+        move.power = 0;
+        await move.save();
+    }
     const moveType = await getTypeData(move.type);
     if (!attacker.stats[1].multiplier) {
         attacker.stats[1].multiplier = 1;
@@ -277,6 +277,7 @@ const attack = async (attacker, defender, move, save = false) => {
 
         }
         if (defender._id) {
+            
             const defenderDb = await Pokemon.findById(defender._id);
             defenderDb.hp = defender.hp;
             await defenderDb.save();
@@ -285,16 +286,35 @@ const attack = async (attacker, defender, move, save = false) => {
     return { attacker, defender, damage, typeMultiplier, move };
 }
 
-
+const deletePokemon = async (pokemonId) => {
+    try {
+        const pokemon = await Pokemon.findById(pokemonId);
+        if(!pokemon || pokemon.owner){
+            return null;
+        }
+        await Pokemon.findByIdAndDelete(pokemonId);
+        return pokemon;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
 export default {
-
-
-
     getNewPokemon,
     addLevel,
     getNewRandomPokemon,
     getStarterPokemons,
     attack,
-    getPokemonByIdFromDb
+    getPokemonByIdFromDb,
+    deletePokemon
+}
 
+export {
+    getNewPokemon,
+    addLevel,
+    getNewRandomPokemon,
+    getStarterPokemons,
+    attack,
+    getPokemonByIdFromDb,
+    deletePokemon
 }

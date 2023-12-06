@@ -22,9 +22,10 @@ const getNRandomUniqueMoves = async (moves, n) => {
         const moveData = await getMoveData(move);
         moveData.level_learned_at = movesToChoose[randomIndex].version_group_details[0].level_learned_at;
         move
-        if (moveData.power !== null) {
-            chosenMoves.push(moveData);
+        if (moveData.power === null) {
+           moveData.power = 0;
         }
+        chosenMoves.push(moveData);
         movesToChoose.splice(randomIndex, 1);
     }
     return chosenMoves;
@@ -40,6 +41,10 @@ const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
 const getMoveData = async(move) =>{
     const existingMove = await MoveTemplate.findOne({name:move.name});
     if(existingMove){
+        if(existingMove.power === null){
+            existingMove.power = 0;
+            await existingMove.save();
+        }
         return existingMove;
     }
     const url = `${moveUrl}/${move.name}`;
@@ -47,6 +52,7 @@ const getMoveData = async(move) =>{
     if(error){
         throw error;
     }
+    data.power = data.power || 0;
     const newMove = new MoveTemplate(data);
     await newMove.save();
     const typeData = await getTypeData(data.type);
