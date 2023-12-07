@@ -8,7 +8,7 @@ const addPokemonToUser = async (username, pokemonId) => {
     if (user.pokemons.length >= 6) {
         throw new Error("No puedes tener más de 6 pokemons");
     }
-    if(user.pokemons.find((pokemon)=>{return pokemon._id === pokemonId})){
+    if(user.pokemons.find((pokemon)=>{return pokemon._id.toString() === pokemonId.toString()})){
         throw new Error("Ya tienes este pokemon");
     }
     let pokemon = null;
