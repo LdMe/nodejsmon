@@ -1,27 +1,29 @@
-import mongoose,{ Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema({
-    username:{
-        type:String,
-        unique:true,
+    username: {
+        type: String,
+        unique: true,
     },
     password:
     {
-        type:String,
+        type: String,
     },
     pokemons:
-    [
+        [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Pokemon"
+            }
+        ],
+    enemies: [
+
         {
             type: Schema.Types.ObjectId,
             ref: "Pokemon"
-        }
-    ],
-    enemy:
-    {
-        type: Schema.Types.ObjectId,
-        ref: "Pokemon"
-    },
-},{ strict: false });
+        },
+    ]
+}, { strict: false });
 
 const User = mongoose.model('User', userSchema);
 

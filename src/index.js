@@ -34,14 +34,20 @@ socketIo.on('connection', (socket) => {
     console.log(`socket ${socket.id} connected`);
 
     socket.on('login', (data) => {
-        console.log(`user ${data.username} logged in`);
-        const oldMember = members.find(member => member.sockerId === socket.id);
-        if (!oldMember) {
-            members.push({ username: data.username, socketId: socket.id });
+        try {
+            console.log(`user ${data.username} logged in`);
+            const oldMember = members.find(member => member.sockerId === socket.id) || members.find(member => member.username === data.username);
+            if (!oldMember) {
+                members.push({ username: data.username, socketId: socket.id });
+            }
+            else {
+                oldMember.socketId = socket.id;
+            }
         }
-        else {
-            oldMember.socketId = socket.id;
+        catch (e) {
+            console.error(e);
         }
+
     });
 
     socket.on('disconnect', () => {
@@ -56,7 +62,7 @@ socketIo.on('connection', (socket) => {
                 return;
             }
             const username = members[index].username;
-            console.log("members",members)
+            console.log("members", members)
             userController.clearFight(username);
             members.splice(index, 1);
             socketIo.to(MAIN_ROOM).emit('leave', username);

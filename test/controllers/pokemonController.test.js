@@ -50,11 +50,11 @@ describe("tests pokemonController", () => {
 
     test("should get pokemon with id 1", async() => {
         const level = 10;
-        pokemon = await pokemonController.getNewPokemon(1,level);
+        pokemon = await pokemonController.getNewPokemon(1,{level});
         expect(pokemon.id).toBe(1);
         expect(pokemon.name).toBe("bulbasaur");
         expect(pokemon.level).toBe(level);
-        pokemon = await pokemonController.getNewPokemon(234234234,level);
+        pokemon = await pokemonController.getNewPokemon(234234234,{level});
         expect(pokemon).toBeNull();
     });
     test("should get a random pokemon", async() => {
@@ -66,7 +66,7 @@ describe("tests pokemonController", () => {
     });
     test("should check if pokemon is evolving", async() => {
         const level = 16;
-        pokemon = await pokemonController.getNewPokemon(1,level);
+        pokemon = await pokemonController.getNewPokemon(1,{level});
         const isEvolving = pokemonController.isEvolving(pokemon);
         expect(isEvolving).toBe(true);
         pokemon.level = 5;
@@ -75,7 +75,7 @@ describe("tests pokemonController", () => {
     });
     test("should evolve pokemon", async() => {
         const level = 16;
-        pokemon = await pokemonController.getNewPokemon(1,level);
+        pokemon = await pokemonController.getNewPokemon(1,{level});
         const evolvedPokemon = await pokemonController.evolve(pokemon);
         expect(evolvedPokemon.id).toBe(2);
         expect(evolvedPokemon.name).toBe("ivysaur");
@@ -100,7 +100,7 @@ describe("tests pokemonController", () => {
     });
     test("should add level to pokemon", async() => {
         const level = 10;
-        const pokemon = await pokemonController.getNewPokemon(1,level);
+        const pokemon = await pokemonController.getNewPokemon(1,{level});
         const pokemonWithLevel = await pokemonController.addLevel(pokemon);
         expect(pokemonWithLevel.level).toBe(level + 1);
     });

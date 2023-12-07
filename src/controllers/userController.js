@@ -1,15 +1,14 @@
 import User from "../models/user.js";
 import Pokemon from "../models/pokemon.js";
-import { getNewPokemon } from "./pokemon/pokemonController.js";
+import pokemonController, { getNewPokemon } from "./pokemon/pokemonController.js";
 const addPokemonToUser = async (username, pokemonId) => {
     
-    const user = await User.findOne({ username });
-    console.log("user", user);
+    const user = await User.findOne({ username }).populate("pokemons");
     
     if (user.pokemons.length >= 6) {
         throw new Error("No puedes tener más de 6 pokemons");
     }
-    if(user.pokemons.includes(pokemonId)){
+    if(user.pokemons.find((pokemon)=>{return pokemon.name === pokemonId})){
         throw new Error("Ya tienes este pokemon");
     }
     let pokemon = null;
@@ -20,8 +19,7 @@ const addPokemonToUser = async (username, pokemonId) => {
         }
         // if pokemonId is a valid name, we search for it in the db
         else{
-            console.log("pokemonId", pokemonId)
-            pokemon = await getNewPokemon(pokemonId, 5);
+            pokemon = await getNewPokemon(pokemonId,{level:5});
         }
         
     } catch (error) {
@@ -52,13 +50,7 @@ const fixStatMultiplier = (stats) => {
 }
 const getUserPokemons = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
-    for(const pokemon of user.pokemons){
-        await pokemon.populate("activeMoves");
-        for (const move of pokemon.activeMoves) {
-            await move.populate("type");
-        }
-    }
-    return user.pokemons;
+    return user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
 }
 /*
 cambiamos los pokemons del usuario por los que se introducen, si no existen los creamos, si existen los actualizamos, tanto de contenido como de orden
@@ -117,9 +109,10 @@ const swapPokemons = async (username, id1, id2) => {
     pokemons[index2] = aux;
     user.pokemons = pokemons;
     await user.save();
+    const reducedPokemons = pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
     return {
         username: user.username,
-        pokemons: pokemons,
+        pokemons: reducedPokemons
     }
 }
 
@@ -157,9 +150,20 @@ const getUser   = async (username) => {
 const clearFight = async (username) => {
     try{
         const user = await User.findOne({ username }).populate("pokemons");
-        if(user.enemy){
-            await Pokemon.findByIdAndDelete(user.enemy);
-            user.enemy = null;
+        if(user.enemies.length > 0){
+            for(const enemy of user.enemies){
+                try{
+                    const pokemon = await Pokemon.findById(enemy._id);
+                    if (!pokemon || pokemon.owner) {
+                        continue;
+                    }
+                    await Pokemon.findByIdAndDelete(enemy._id);
+                }
+                catch(e){
+                    console.error(e);
+                }
+            }
+            user.enemies = [];
             await user.save();
         }
     }

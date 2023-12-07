@@ -10,6 +10,15 @@ const getTypesData = async (pokemon) => {
     }));
     return typesData;
 }
+
+const getReducedTypeData = type => {
+    return {
+        _id: type._id,
+        name: type.name,
+        damage_relations: type.damage_relations,
+        names: type.names,
+    }
+}
     
 const getTypeData = async(type) =>{
     const existingType = await TypeTemplate.findOne({name:type.name});
@@ -29,4 +38,5 @@ const getTypeData = async(type) =>{
 export {
     getTypesData,
     getTypeData,
+    getReducedTypeData,
 }
