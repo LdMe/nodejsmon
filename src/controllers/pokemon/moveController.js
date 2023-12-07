@@ -72,7 +72,10 @@ const changeBadMoveForGoodMove = async (oldActiveMoves,moves,level) => {
     if (!goodMove) {
         return activeMoves;
     }
-    
+    const goodMoveIndexInActiveMoves = activeMoves.findIndex((move) => move.name === goodMove.name);
+    if(goodMoveIndexInActiveMoves !== -1){
+        return activeMoves;
+    }
     activeMoves[0] = goodMove;
     
     return activeMoves;
