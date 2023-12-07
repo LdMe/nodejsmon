@@ -1,4 +1,4 @@
-import {Router } from 'express';
+import { Router } from 'express';
 import pokemonController from '../controllers/pokemon/pokemonController.js';
 import User from '../models/user.js';
 const router = Router();
@@ -7,53 +7,63 @@ router.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-router.get('/fetch/random', async(req, res) => {
+router.get('/fetch/random', async (req, res) => {
     try {
-    const level = req.query.level || 5;
-    const pokemon = await pokemonController.getNewRandomPokemon(level);
-    const user = req.user;
-    if(user.username){
-        const userDb = await User.findOne({username: user.username});
-        userDb.enemy = pokemon._id;
-        console.log("enemy", userDb.enemy)
-        await userDb.save();
+        const level = req.query.level || 5;
+        const trainer = req.query.trainer || false;
+        console.log("is trainer pokemon", trainer)
+        const pokemon = await pokemonController.getNewRandomPokemon(level, trainer);
+        const user = req.user;
+        if (user.username) {
+            const userDb = await User.findOne({ username: user.username });
+            userDb.enemies.push(pokemon._id);
+            console.log("enemies", userDb.enemies.length)
+            await userDb.save();
+        }
+        res.send(pokemon);
     }
-    res.send(pokemon);
-    }
-    catch(error){
+    catch (error) {
         console.error(error);
         res.status(500).send("error al buscar pokemon");
     }
 });
-router.get('/fetch/:id', async(req, res) => {
+router.get('/fetch/:id', async (req, res) => {
     try {
-        
+
         const id = req.params.id;
+        const save = req.query.save;
+        const trainer = req.query.trainer || false;
+        console.log("is trainer pokemon", trainer)
         // if id is a number, it is the id of the generic pokemon, if it is a string, it is the _id of the pokemon in the database
-        if(isNaN(id)){
+        if (isNaN(id)) {
             const pokemon = await pokemonController.getPokemonByIdFromDb(id);
-            res.send(pokemon);
+            res.send(pokemonController.getReducedPokemonData(pokemon));
             return;
         }
 
         const level = req.query.level || 5;
-        const pokemon = await pokemonController.getNewPokemon(id,level);
-        res.send(pokemon);
+        const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
+        res.send(pokemonController.getReducedPokemonData(pokemon));
     } catch (error) {
         res.status(404).send("pokemon no encontrado");
     }
 });
-router.get('/starter', async(req, res) => {
-    const pokemon = await pokemonController.getStarterPokemons();
-    res.send(pokemon);
+router.get('/starter', async (req, res) => {
+    try {
+        const pokemon = await pokemonController.getStarterPokemons();
+        res.send(pokemon);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send("error al buscar pokemon");
+    }
 });
 
-router.post('/attack', async(req, res) => {
+router.post('/attack', async (req, res) => {
     try {
         const pokemon1 = req.body.pokemon1;
         const pokemon2 = req.body.pokemon2;
-        const move = req.body.move;
-        const result = await pokemonController.attack(pokemon1,pokemon2,move,true);
+        const result = await pokemonController.attack(pokemon1, pokemon2);
         res.send(result);
     } catch (error) {
         console.error(error)
@@ -61,7 +71,7 @@ router.post('/attack', async(req, res) => {
     }
 });
 
-router.put('/level', async(req, res) => {
+router.put('/level', async (req, res) => {
     try {
         const pokemon = req.body.pokemon;
         const result = await pokemonController.addLevel(pokemon);
@@ -72,7 +82,7 @@ router.put('/level', async(req, res) => {
     }
 });
 
-router.delete('/saved/:id', async(req, res) => {
+router.delete('/saved/:id', async (req, res) => {
     try {
         const id = req.params.id;
         console.log("deleting pokemon", id);
