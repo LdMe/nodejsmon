@@ -11,11 +11,11 @@ const register = async (req, res) => {
         const { username, password, passwordConfirm } = req.body;
         const oldUser =await User.findOne({ username });
         if (oldUser) {
-            res.status(400).send("User already exists");
+            res.status(409).send("User already exists");
             return;
         }
         if (password !== passwordConfirm) {
-            res.status(400).send("Passwords do not match");
+            res.status(401).send("Passwords do not match");
             return;
         }
         const hashedPassword = await bcrypt.hash(password, 10);
