@@ -296,6 +296,9 @@ const attack = async (attackerId, defenderId) => {
         const move = attacker.activeMoves[randomIndex];
         //let damage = move.power * attacker.level;
         let { damage, typeMultiplier } = await getDamage(attacker, defender, move);
+        if(damage < 0){
+            damage = 0;
+        }
         defender.hp -= damage;
 
         defender.hp = Math.round(defender.hp);
