@@ -3,6 +3,7 @@ import { getTypeData,getReducedTypeData } from './typeController.js';
 import { fetchData } from './utils.js';
 import Pokemon from '../../models/pokemon.js';
 import MoveTemplate from '../../models/templates/move.js';
+import { get } from 'mongoose';
 
 const moveUrl = 'https://pokeapi.co/api/v2/move';
 const filterMovesByLevel = (moves, level) => {
@@ -48,35 +49,45 @@ const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
     return chosenMoves;
 }
 
-const getGoodMoveForLevel = async (moves,level) => {
+const getGoodMovesForLevel = async (moves,level,numMoves=4) => {
     const movesToChoose = filterMovesByLevel(moves, level);
     const sortedMoves = sortMovesByPower(movesToChoose);
-    let move = null;
-    while (sortedMoves.length > 0 && move === null) {
+    let newMoves = [];
+    while (sortedMoves.length > 0 && newMoves.length < numMoves) {
         const move = sortedMoves.pop();
         const moveData = await getMoveData(move.move);
         if (moveData.power >= level) {
-            return getReducedMoveData(moveData);
+            
+            newMoves.push(getReducedMoveData(moveData));
         }
     }
-    return null;
+    return newMoves;
 }
 
 const changeBadMoveForGoodMove = async (oldActiveMoves,moves,level) => {
     const activeMoves = [...oldActiveMoves];
-    const goodMoveIndex = moves.findIndex((move) => move.power >= level);
+    /* const goodMoveIndex = moves.findIndex((move) => move.power >= level);
     if (!goodMoveIndex === -1) {
         return activeMoves;
-    }
-    const goodMove = await getGoodMoveForLevel(moves, level);
-    if (!goodMove) {
+    } */
+    console.log("changing bad move for good move")
+    const goodMoves = await getGoodMovesForLevel(moves, level,4);
+    if (goodMoves.length === 0) {
         return activeMoves;
     }
-    const goodMoveIndexInActiveMoves = activeMoves.findIndex((move) => move.name === goodMove.name);
-    if(goodMoveIndexInActiveMoves !== -1){
+    const newGoodMoves = goodMoves.filter((move) => activeMoves.findIndex((activeMove) => activeMove.name === move.name) === -1);
+    if (newGoodMoves.length === 0) {
         return activeMoves;
     }
-    activeMoves[0] = goodMove;
+    for(const move of newGoodMoves){
+        const sortedMoves = sortMovesByPower(activeMoves,false);
+        const badMove = sortedMoves[0];
+        const index = activeMoves.findIndex((activeMove)=>{return activeMove.name === badMove.name});
+        if(index !== -1){
+            activeMoves[index] = move;
+            sortedMoves.shift();
+        }
+    }
     
     return activeMoves;
 }
