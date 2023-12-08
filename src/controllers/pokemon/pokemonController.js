@@ -305,13 +305,13 @@ const attack = async (attackerId, defenderId) => {
         if (defender.hp < 0) {
             defender.hp = 0;
         }
-
-        if (attacker._id) {
+        // por ahora no guardamos cambios en el atacante
+        /* if (attacker._id) {
             const attackerDb = await Pokemon.findById(attacker._id);
             attackerDb.hp = attacker.hp;
             await attackerDb.save();
 
-        }
+        } */
         if (defender._id) {
 
             const defenderDb = await Pokemon.findById(defender._id);
