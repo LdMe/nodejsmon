@@ -52,20 +52,21 @@ socketIo.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         try {
-            socket.leave(MAIN_ROOM);
-            console.log(`socket ${socket.id} disconnected`);
-
-            const index = members.findIndex(member => member.socketId === socket.id);
-            if (index === -1) {
+            const member = members.find(member => member.socketId === socket.id);
+            if (!member) {
                 console.log('user not found');
-                console.log(members, socket.id)
                 return;
             }
-            const username = members[index].username;
+            socket.leave( member.room);
+            console.log(`socket ${socket.id} disconnected`);
+            socketIo.to(member.room).emit('leave', member.username);
+
+            const username = member.username;
             console.log("members", members)
             userController.clearFight(username);
+            const index = members.findIndex(member => member.socketId === socket.id);
+
             members.splice(index, 1);
-            socketIo.to(MAIN_ROOM).emit('leave', username);
             console.log(`socket ${socket.id} disconnected`);
         }
         catch (e) {
@@ -76,9 +77,17 @@ socketIo.on('connection', (socket) => {
         try {
             console.log(data);
             console.log(`user ${data.username} joined room ${data.room}`);
-            socketIo.to(data.room).emit('join', data.username);
             socket.join(data.room);
-            socket.emit('members', members.map(member => member.username));
+            socketIo.to(data.room).emit('join', data.username);
+            const member = members.find(member => member.socketId === socket.id);
+            if (!member) {
+                console.log('user not found');
+                return;
+            }
+            member.room = data.room;
+
+            const membersInRoom = members.filter(member => member.room === data.room);
+            socketIo.to(data.room).emit('members', membersInRoom.map(member => member.username));
 
         }
         catch (e) {
@@ -89,8 +98,15 @@ socketIo.on('connection', (socket) => {
     socket.on('leave', (data) => {
         try {
             console.log(`user ${data.username} left room ${data.room}`);
+            const member = members.find(member => member.socketId === socket.id);
+            
             socketIo.to(data.room).emit('leave', data.username);
             socket.leave(data.room);
+            if (!member) {
+                console.log('user not found');
+                return;
+            }
+            member.room = null;
 
         }
         catch (e) {
@@ -114,6 +130,7 @@ socketIo.on('connection', (socket) => {
             const userTo = members.find(member => member.username === data.username);
             if (!userTo) {
                 console.log('user not found');
+                console.log("members", members)
                 return;
             }
             socketIo.to(userTo.socketId).emit('ask-to-fight', userFrom.username);
