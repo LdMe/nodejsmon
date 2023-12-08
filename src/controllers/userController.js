@@ -108,6 +108,12 @@ const swapPokemons = async (username, id1, id2) => {
     if (index1 === -1 || index2 === -1) {
         throw new Error("No se han encontrado los pokemons");
     }
+    if((index1 === 0 && pokemons[index2].hp === 0) || (index2 === 0 && pokemons[index1].hp === 0)){
+        return {
+            username: user.username,
+            pokemons: pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon))
+        }
+    }
     const aux = pokemons[index1];
     pokemons[index1] = pokemons[index2];
     pokemons[index2] = aux;
