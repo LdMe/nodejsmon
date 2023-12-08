@@ -98,6 +98,9 @@ const healPokemons = async (username) => {
 }
 
 const swapPokemons = async (username, id1, id2) => {
+    if(id1 === id2){
+        return;
+    }
     const user = await User.findOne({ username }).populate("pokemons");
     const pokemons = user.pokemons;
     const index1 = pokemons.findIndex((pokemon) => { return pokemon._id.toString() === id1 });
