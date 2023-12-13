@@ -2,31 +2,31 @@ import User from "../models/user.js";
 import Pokemon from "../models/pokemon.js";
 import pokemonController, { getNewPokemon } from "./pokemon/pokemonController.js";
 const addPokemonToUser = async (username, pokemonId) => {
-    
+
     const user = await User.findOne({ username }).populate("pokemons");
-    
+
     if (user.pokemons.length >= 6) {
         throw new Error("No puedes tener más de 6 pokemons");
     }
-    if(user.pokemons.find((pokemon)=>{return pokemon._id.toString() === pokemonId.toString()})){
+    if (user.pokemons.find((pokemon) => { return pokemon._id.toString() === pokemonId.toString() })) {
         throw new Error("Ya tienes este pokemon");
     }
     let pokemon = null;
     try {
         // if pokemonId is a valid id, we search for it in the db
-        if(pokemonId.length === 24){
+        if (pokemonId.length === 24) {
             pokemon = await Pokemon.findById(pokemonId);
         }
         // if pokemonId is a valid name, we search for it in the db
-        else{
-            pokemon = await getNewPokemon(pokemonId,{level:5});
+        else {
+            pokemon = await getNewPokemon(pokemonId, { level: 5 });
         }
-        
+
     } catch (error) {
-        
+
         throw new Error("No se ha encontrado el pokemon");
     }
-    if(!pokemon._id){
+    if (!pokemon._id) {
         pokemon = new Pokemon(pokemon);
     }
     pokemon.owner = user._id;
@@ -42,7 +42,68 @@ const addPokemonToUser = async (username, pokemonId) => {
         pokemons: user.pokemons,
     }
 }
-
+const savePokemonToPc = async (username, pokemonId) => {
+    try {
+        const user = await User.findOne({ username }).populate("pokemons");
+        await user.populate("savedPokemons");
+        const pokemon = user.pokemons.find((pokemon) => { return pokemon._id.toString() === pokemonId });
+        if (!pokemon) {
+            throw new Error("No se ha encontrado el pokemon");
+        }
+        if (user.savedPokemons.length >= 30) {
+            throw new Error("No puedes guardar más de 30 pokemons");
+        }
+        if(user.pokemons.length === 1){
+            throw new Error("No puedes guardar el último pokemon");
+        }
+        user.savedPokemons.push(pokemon);
+        user.pokemons = user.pokemons.filter((pokemon) => { return pokemon._id.toString() !== pokemonId });
+        await user.save();
+        const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        const savedPokemons = user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        return {
+            username: user.username,
+            pokemons: pokemons,
+            savedPokemons: savedPokemons,
+        }
+    }
+    catch (e) {
+        console.error(e);
+        return {
+            error: e.message,
+        }
+    }
+}
+const removePokemonFromPc = async (username, pokemonId) => {
+    try {
+        const user = await User.findOne({ username }).populate("pokemons");
+        await user.populate("savedPokemons");
+        const pokemon = user.savedPokemons.find((pokemon) => { return pokemon._id.toString() === pokemonId });
+        if (!pokemon) {
+            throw new Error("No se ha encontrado el pokemon");
+        }
+        user.pokemons.push(pokemon);
+        user.savedPokemons = user.savedPokemons.filter((pokemon) => { return pokemon._id.toString() !== pokemonId });
+        await user.save();
+        const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        const savedPokemons = user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        return {
+            username: user.username,
+            pokemons: pokemons,
+            savedPokemons: savedPokemons,
+        }
+    }
+    catch (e) {
+        console.error(e);
+        return {
+            error: e.message,
+        }
+    }
+}
+const getSavedPokemons = async (username) => {
+    const user = await User.findOne({ username }).populate("savedPokemons");
+    return user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+}
 const fixStatMultiplier = (stats) => {
     for (const stat of stats) {
         stat.multiplier = 1;
@@ -82,7 +143,7 @@ const setUserPokemons = async (username, pokemons) => {
 }
 
 const healPokemons = async (username) => {
-    const user  = await User.findOne({ username }).populate("pokemons");
+    const user = await User.findOne({ username }).populate("pokemons");
     const pokemons = user.pokemons;
     const healedPokemons = await Promise.all(pokemons.map(async (pokemon) => {
         pokemon.hp = pokemon.maxHp;
@@ -98,31 +159,52 @@ const healPokemons = async (username) => {
 }
 
 const swapPokemons = async (username, id1, id2) => {
-    if(id1 === id2){
+    if (id1 === id2) {
         return;
     }
     const user = await User.findOne({ username }).populate("pokemons");
+    await user.populate("savedPokemons");
     const pokemons = user.pokemons;
-    const index1 = pokemons.findIndex((pokemon) => { return pokemon._id.toString() === id1 });
-    const index2 = pokemons.findIndex((pokemon) => { return pokemon._id.toString() === id2 });
-    if (index1 === -1 || index2 === -1) {
+    const savedPokemons = user.savedPokemons;
+    let index1 = pokemons.findIndex((pokemon) => { return pokemon._id.toString() === id1 });
+    let index2 = pokemons.findIndex((pokemon) => { return pokemon._id.toString() === id2 });
+    let index1Pc = savedPokemons.findIndex((pokemon) => { return pokemon._id.toString() === id1 });
+    let index2Pc = savedPokemons.findIndex((pokemon) => { return pokemon._id.toString() === id2 });
+    if ((index1 === -1 && index1Pc === -1) || (index2 === -1 && index2Pc === -1)) {
         throw new Error("No se han encontrado los pokemons");
     }
-    if((index1 === 0 && pokemons[index2].hp === 0) || (index2 === 0 && pokemons[index1].hp === 0)){
+    const pokemon1 = index1 === -1 ? savedPokemons[index1Pc] : pokemons[index1];
+    const pokemon2 = index2 === -1 ? savedPokemons[index2Pc] : pokemons[index2];
+    
+    if ((index1 === 0 && pokemon2.hp === 0) || (index2 === 0 && pokemon1.hp === 0)) {
         return {
             username: user.username,
-            pokemons: pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon))
+            pokemons: pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon)),
+            savedPokemons : savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon))
         }
     }
-    const aux = pokemons[index1];
-    pokemons[index1] = pokemons[index2];
-    pokemons[index2] = aux;
+    const aux = pokemon1;
+    if (index1 !== -1) {
+        pokemons[index1] = pokemon2;
+    }
+    else {
+        savedPokemons[index1Pc] = pokemon2;
+    }
+    if (index2 !== -1) {
+        pokemons[index2] = aux;
+    }
+    else {
+        savedPokemons[index2Pc] = aux;
+    }
     user.pokemons = pokemons;
+    user.savedPokemons = savedPokemons;
     await user.save();
     const reducedPokemons = pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+    const reducedSavedPokemons = savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
     return {
         username: user.username,
-        pokemons: reducedPokemons
+        pokemons: reducedPokemons,
+        savedPokemons : reducedSavedPokemons,
     }
 }
 
@@ -144,7 +226,7 @@ const removePokemon = async (username, id) => {
     }
 }
 
-const getUser   = async (username) => {
+const getUser = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
     if (!user) {
         return null;
@@ -158,18 +240,18 @@ const getUser   = async (username) => {
 // funcion para eliminar el pokemon salvaje contra el que se ha luchado
 
 const clearFight = async (username) => {
-    try{
+    try {
         const user = await User.findOne({ username }).populate("pokemons");
-        if(user.enemies.length > 0){
-            for(const enemy of user.enemies){
-                try{
+        if (user.enemies.length > 0) {
+            for (const enemy of user.enemies) {
+                try {
                     const pokemon = await Pokemon.findById(enemy._id);
                     if (!pokemon || pokemon.owner) {
                         continue;
                     }
                     await Pokemon.findByIdAndDelete(enemy._id);
                 }
-                catch(e){
+                catch (e) {
                     console.error(e);
                 }
             }
@@ -177,7 +259,7 @@ const clearFight = async (username) => {
             await user.save();
         }
     }
-    catch(e){
+    catch (e) {
         console.error(e);
     }
 }
@@ -190,5 +272,8 @@ export default {
     swapPokemons,
     removePokemon,
     getUser,
-    clearFight
+    clearFight,
+    savePokemonToPc,
+    getSavedPokemons,
+    removePokemonFromPc,
 }

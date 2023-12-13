@@ -9,11 +9,12 @@ import { getTypeData } from "./typeController.js";
 import { getSpecies } from "./speciesController.js";
 import { fetchData } from "./utils.js";
 import PokemonTemplate from "../../models/templates/pokemon.js";
-import { get } from "mongoose";
-import e from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const pokemonUrl = 'https://pokeapi.co/api/v2/pokemon';
-
+const MAX_POKEMON = process.env.MAX_POKEMON || 2;
 
 
 
@@ -143,11 +144,11 @@ const checkEvolutionIsCorrectForWildPokemon = (pokemon) => {
 }
 const getNewRandomPokemon = async (level = 5,trainer=false) => {
 
-    let randomId = Math.floor(Math.random() * 151) + 1;
+    let randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
     let newPokemon = await getNewPokemon(randomId, { level ,trainer});
 
     while (!checkEvolutionIsCorrectForWildPokemon(newPokemon)) {
-        randomId = Math.floor(Math.random() * 151) + 1;
+        randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
         newPokemon = await getNewPokemon(randomId, { level ,trainer});
 
     }
@@ -359,7 +360,9 @@ const getReducedPokemonData = (pokemon) => {
         back_default: pokemon.sprites.versions['generation-v']['black-white'].animated.back_default,
         back_shiny: pokemon.sprites.versions['generation-v']['black-white'].animated.back_shiny,
     }
-
+    const currentEvolutionIndex = pokemon.evolutions.findIndex((evolution) => evolution.name === pokemon.name);
+    const nextEvolutionIndex = currentEvolutionIndex + 1;
+    const nextEvolution = nextEvolutionIndex < pokemon.evolutions.length ?  pokemon.evolutions[nextEvolutionIndex] : null;
     const newPokemon = {
         _id: pokemon._id,
         name: pokemon.name,
@@ -375,6 +378,7 @@ const getReducedPokemonData = (pokemon) => {
         id: pokemon.id,
         shiny: pokemon.shiny,
         types: types,
+        nextEvolution: nextEvolution,
     }
     return newPokemon;
 }

@@ -16,6 +16,13 @@ const userSchema = new Schema({
                 ref: "Pokemon"
             }
         ],
+    savedPokemons:
+        [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Pokemon"
+            }
+        ],
     enemies: [
 
         {

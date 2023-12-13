@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pokemonController from '../controllers/pokemon/pokemonController.js';
+import habitatController from '../controllers/pokemon/habitatController.js';
 import User from '../models/user.js';
 const router = Router();
 
@@ -93,5 +94,5 @@ router.delete('/saved/:id', async (req, res) => {
         res.status(404).send("pokemon no encontrado");
     }
 });
-
+router.get("/habitats", habitatController.getHabitats);
 export default router;

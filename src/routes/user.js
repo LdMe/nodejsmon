@@ -42,6 +42,42 @@ router.put("/pokemons", async(req, res) => {
         res.status(404).send("usuario no encontrado");
     }
 });
+
+router.get("/pokemons/pc", async(req, res) => {
+    try {
+        const username = req.user.username;
+        const user = await userController.getSavedPokemons(username);
+        res.send(user);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send("usuario no encontrado");
+    }
+});
+router.post("/pokemons/pc", async(req, res) => {
+    try {
+        const username = req.user.username;
+        const pokemon = req.body.pokemon;
+        const user = await userController.savePokemonToPc(username, pokemon);
+        res.send(user);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send("usuario no encontrado");
+    }
+});
+router.delete("/pokemons/pc/:id", async(req, res) => {
+    try {
+        const username = req.user.username;
+        const id = req.params.id;
+        const data = await userController.removePokemonFromPc(username, id);
+        res.send(data);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(404).send("usuario no encontrado");
+    }
+})
 router.put("/pokemons/heal", async(req, res) => {
     try {
         const username = req.user.username;
@@ -106,6 +142,7 @@ router.post("/clear", (req, res) => {
         res.status(500).send("Error interno");
     }
 });
+
 
 
 export default router;
