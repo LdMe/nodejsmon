@@ -78,6 +78,9 @@ const removePokemonFromPc = async (username, pokemonId) => {
     try {
         const user = await User.findOne({ username }).populate("pokemons");
         await user.populate("savedPokemons");
+        if(user.pokemons.length >= 6){
+            throw new Error("No puedes guardar más de 6 pokemons");
+        }
         const pokemon = user.savedPokemons.find((pokemon) => { return pokemon._id.toString() === pokemonId });
         if (!pokemon) {
             throw new Error("No se ha encontrado el pokemon");
