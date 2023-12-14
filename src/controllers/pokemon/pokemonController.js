@@ -48,7 +48,7 @@ const getNewPokemon = async (id, options = { level: 5, stats: null, activeMoves:
         level = level || 5;
         stats = stats || null;
         activeMoves = activeMoves || [];
-        canBeShiny = canBeShiny || false;
+        canBeShiny = canBeShiny === false ? false : true;
         save = save || false;
         level = Math.min(level, 100);
         trainer = trainer || false;
