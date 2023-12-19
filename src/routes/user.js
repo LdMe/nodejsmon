@@ -13,7 +13,7 @@ router.get("/pokemons", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 
@@ -26,7 +26,7 @@ router.post("/pokemons", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 
@@ -39,7 +39,7 @@ router.put("/pokemons", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 
@@ -51,7 +51,7 @@ router.get("/pokemons/pc", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("usuario no encontrado");
+        res.status(500).json({error:"usuario no encontrado"});
     }
 });
 router.post("/pokemons/pc", async(req, res) => {
@@ -63,7 +63,7 @@ router.post("/pokemons/pc", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("usuario no encontrado");
+        res.status(500).json({error:"usuario no encontrado"});
     }
 });
 router.delete("/pokemons/pc/:id", async(req, res) => {
@@ -75,7 +75,7 @@ router.delete("/pokemons/pc/:id", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 })
 router.put("/pokemons/heal", async(req, res) => {
@@ -86,7 +86,7 @@ router.put("/pokemons/heal", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 
@@ -100,7 +100,7 @@ router.put("/pokemons/swap", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 router.delete("/pokemons/:id", async(req, res) => {
@@ -112,7 +112,7 @@ router.delete("/pokemons/:id", async(req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(404).send("usuario no encontrado");
+        res.status(404).json({error:"usuario no encontrado"});
     }
 });
 router.get("/data/:username", async(req, res) => {
@@ -120,14 +120,14 @@ router.get("/data/:username", async(req, res) => {
         const username = req.params.username;
         const user = await userController.getUser(username);
         if (!user) {
-            res.status(404).send("usuario no encontrado");
+            res.status(404).json({error:"usuario no encontrado"});
             return;
         }
         res.send(user);
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("Error interno");
+        res.status(500).json({error:"Error interno"});
     }
 }
 );
@@ -135,11 +135,11 @@ router.post("/clear", (req, res) => {
     try {
         const username = req.user.username;
         userController.clearFight(username);
-        res.send("ok");
+        res.json({message:"ok"});
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("Error interno");
+        res.status(500).json({error:"Error interno"});
     }
 });
 

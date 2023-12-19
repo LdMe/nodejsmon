@@ -25,7 +25,7 @@ router.get('/fetch/random', async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("error al buscar pokemon");
+        res.status(500).json({error:"error al buscar pokemon"});
     }
 });
 router.get('/fetch/:id', async (req, res) => {
@@ -46,7 +46,7 @@ router.get('/fetch/:id', async (req, res) => {
         const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
         res.send(pokemonController.getReducedPokemonData(pokemon));
     } catch (error) {
-        res.status(404).send("pokemon no encontrado");
+        res.status(404).json({error:"pokemon no encontrado"});
     }
 });
 router.get('/starter', async (req, res) => {
@@ -56,7 +56,7 @@ router.get('/starter', async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("error al buscar pokemon");
+        res.status(500).json({error:"error al buscar pokemon"});
     }
 });
 
@@ -68,7 +68,7 @@ router.post('/attack', async (req, res) => {
         res.send(result);
     } catch (error) {
         console.error(error)
-        res.status(404).send("pokemon no encontrado");
+        res.status(404).json({error:"pokemon no encontrado"});
     }
 });
 
@@ -79,7 +79,7 @@ router.put('/level', async (req, res) => {
         res.send(result);
     } catch (error) {
         console.error(error);
-        res.status(404).send("pokemon no encontrado");
+        res.status(404).json({error:"pokemon no encontrado"});
     }
 });
 
@@ -91,7 +91,7 @@ router.delete('/saved/:id', async (req, res) => {
         res.send(pokemon);
     } catch (error) {
         console.error(error);
-        res.status(404).send("pokemon no encontrado");
+        res.status(404).json({error:"pokemon no encontrado"});
     }
 });
 router.get("/habitats", habitatController.getHabitats);

@@ -6,12 +6,12 @@ dotenv.config();
 const isAuth = (req, res, next) => {
     const cookie = req.headers.cookie;
     if(!cookie){
-        res.status(401).send("Unauthorized: No cookie provided");
+        res.status(401).json({error:"Unauthorized: No cookie provided"});
         return;
     }
     const token = cookie.split("=")[1];
     if (!token) {
-        res.status(401).send("Unauthorized: No token provided");
+        res.status(401).json({error:"Unauthorized: No token provided"});
         return;
     }
     try {
@@ -19,7 +19,7 @@ const isAuth = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        res.status(401).send("Unauthorized: Invalid token");
+        res.status(401).json({error:"Unauthorized: Invalid token"});
         return;
     }
 }

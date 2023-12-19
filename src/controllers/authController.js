@@ -11,11 +11,11 @@ const register = async (req, res) => {
         const { username, password, passwordConfirm } = req.body;
         const oldUser =await User.findOne({ username });
         if (oldUser) {
-            res.status(409).send("User already exists");
+            res.status(409).json({error:"User already exists"});
             return;
         }
         if (password !== passwordConfirm) {
-            res.status(401).send("Passwords do not match");
+            res.status(401).json({error:"Passwords do not match"});
             return;
         }
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,7 +25,7 @@ const register = async (req, res) => {
     }
     catch (e) {
         console.error(e);
-        res.status(500).send("Error registering user");
+        res.status(500).json({error:"Error registering user"});
     }
 }
 
@@ -34,12 +34,12 @@ const login = async (req, res) => {
         const { username, password } = req.body;
     const oldUser = await User.findOne({ username });
     if (!oldUser) {
-        res.status(404).send("User does not exist");
+        res.status(404).json({error:"User does not exist"});
         return;
     }
     const isPasswordCorrect = await bcrypt.compare(password, oldUser.password);
     if (!isPasswordCorrect) {
-        res.status(400).send("Invalid credentials");
+        res.status(400).json({error:"Invalid credentials"});
         return;
     }
     const token = Jwt.sign({ username: oldUser.username, id: oldUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -63,14 +63,14 @@ const login = async (req, res) => {
     }
     catch (e) {
         console.error(e);
-        res.status(500).send("Error loggin user")
+        res.status(500).json({error:"Error loggin user"})
     }
     
 }
 
 const logout = async (req, res) => {
     res.clearCookie("token");
-    res.status(200).send("Logged out");
+    res.status(200).json({error:"Logged out"});
 }
 
 
