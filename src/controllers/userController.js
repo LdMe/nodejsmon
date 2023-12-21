@@ -267,6 +267,46 @@ const clearFight = async (username) => {
     }
 }
 
+/*
+get all users
+*/
+const getAllUsers = async () => {
+    const users = await User.find({})
+    return users;
+}
+
+/*
+get all users with pokemons
+*/
+const getConnectedUsers = async () => {
+    const users = await User.find({isConnected:true})
+    return users;
+}
+const connectUser = async (username) => {
+    const user = await User.findOne({username});
+    if(!user){
+        return;
+    }
+    user.isConnected = true;
+    const lastLogin = Date.now();
+    // if it has passed more than 1 hour since last login, we add 1 to loginCount
+    if(lastLogin - user.lastLogin > 60*60*1000){
+        user.loginCount++;
+    }
+
+    user.lastLogin = lastLogin;
+    await user.save();
+}
+
+const disconnectUser = async (username) => {
+    const user = await User.findOne({username});
+    if(!user){
+        return;
+    }
+    user.isConnected = false;
+    user.activeTime += (Date.now() - user.lastLogin) / 1000;
+    await user.save();
+}
 export default {
     addPokemonToUser,
     getUserPokemons,
@@ -279,4 +319,8 @@ export default {
     savePokemonToPc,
     getSavedPokemons,
     removePokemonFromPc,
+    getAllUsers,
+    getConnectedUsers,
+    connectUser,
+    disconnectUser,
 }

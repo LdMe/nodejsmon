@@ -2,6 +2,7 @@ import Jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import userController from "./userController.js";
 
 dotenv.config();
 
@@ -53,10 +54,11 @@ const login = async (req, res) => {
      });
 
     res.status(200).json({
-        result:
+        user:
         {
             username: oldUser.username,
-            id: oldUser._id
+            id: oldUser._id,
+            role: oldUser.role
         },
         token
     });
@@ -69,6 +71,7 @@ const login = async (req, res) => {
 }
 
 const logout = async (req, res) => {
+    userController.disconnectUser(req.user.username);
     res.clearCookie("token");
     res.status(200).json({error:"Logged out"});
 }

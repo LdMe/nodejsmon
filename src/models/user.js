@@ -29,7 +29,27 @@ const userSchema = new Schema({
             type: Schema.Types.ObjectId,
             ref: "Pokemon"
         },
-    ]
+    ],
+    role: {
+        type: String,
+        default: "user"
+    },
+    isConnected: {
+        type: Boolean,
+        default: false
+    },
+    lastLogin: {
+        type: Date,
+        default: Date.now
+    },
+    activeTime: {
+        type: Number,
+        default: 0
+    },
+    loginCount: {
+        type: Number,
+        default: 0
+    },
 }, { strict: false });
 
 const User = mongoose.model('User', userSchema);

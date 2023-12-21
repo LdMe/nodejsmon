@@ -36,6 +36,7 @@ socketIo.on('connection', (socket) => {
     socket.on('login', (data) => {
         try {
             console.log(`user ${data.username} logged in`);
+            userController.connectUser(data.username);
             const oldMember = members.find(member => member.sockerId === socket.id) || members.find(member => member.username === data.username);
             if (!oldMember) {
                 members.push({ username: data.username, socketId: socket.id });
@@ -64,6 +65,7 @@ socketIo.on('connection', (socket) => {
             const username = member.username;
             console.log("members", members)
             userController.clearFight(username);
+            userController.disconnectUser(username);
             const index = members.findIndex(member => member.socketId === socket.id);
 
             members.splice(index, 1);
