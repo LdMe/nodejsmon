@@ -43,7 +43,7 @@ const login = async (req, res) => {
         res.status(400).json({error:"Invalid credentials"});
         return;
     }
-    const token = Jwt.sign({ username: oldUser.username, id: oldUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = Jwt.sign({ username: oldUser.username, id: oldUser._id,role:oldUser.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
     /* send token in a cookie */
     res.cookie("token", token, { 
         httpOnly: true,

@@ -7,6 +7,16 @@ const router = Router();
 router.get('/', (req, res) => {
     res.send('Hello World!');
 });
+router.get('/templates', async (req, res) => {
+    try {
+        const pokemon = await pokemonController.getPokemonTemplatesFromDb();
+        res.send(pokemon);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"error al buscar pokemon"});
+    }
+})
 
 router.get('/fetch/random', async (req, res) => {
     try {
