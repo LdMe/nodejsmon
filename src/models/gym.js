@@ -7,6 +7,12 @@ import mongoose, { Schema } from "mongoose";
 
 const gymSchema = new Schema({
     name: String,
+    types:[
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Type",
+        },
+    ],
     leaderPokemons: [
         {
         level: Number,
@@ -29,6 +35,13 @@ const gymSchema = new Schema({
     maxLevel: Number,
 });
 
+gymSchema.pre("find",  function () {
+    this.populate("types");
+    this.populate("badge");
+   
+}).pre("findOne",  async function () {
+    this.populate("types");
+    this.populate("badge");
+})
 const Gym = mongoose.model("Gym", gymSchema);
-
 export default Gym;

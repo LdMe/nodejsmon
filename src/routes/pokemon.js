@@ -1,16 +1,27 @@
 import { Router } from 'express';
 import pokemonController from '../controllers/pokemon/pokemonController.js';
 import habitatController from '../controllers/pokemon/habitatController.js';
+import typeController from '../controllers/pokemon/typeController.js';
 import User from '../models/user.js';
 const router = Router();
 
 router.get('/', (req, res) => {
     res.send('Hello World!');
 });
+router.get('/types', async (req, res) => {
+    try {
+        const types = await typeController.getTypesFromDB();
+        res.json(types);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"error al buscar pokemon"});
+    }
+})
 router.get('/templates', async (req, res) => {
     try {
         const pokemon = await pokemonController.getPokemonTemplatesFromDb();
-        res.send(pokemon);
+        res.json(pokemon);
     }
     catch (error) {
         console.error(error);
@@ -31,7 +42,7 @@ router.get('/fetch/random', async (req, res) => {
             console.log("enemies", userDb.enemies.length)
             await userDb.save();
         }
-        res.send(pokemon);
+        res.json(pokemon);
     }
     catch (error) {
         console.error(error);
@@ -48,13 +59,13 @@ router.get('/fetch/:id', async (req, res) => {
         // if id is a number, it is the id of the generic pokemon, if it is a string, it is the _id of the pokemon in the database
         if (isNaN(id)) {
             const pokemon = await pokemonController.getPokemonByIdFromDb(id);
-            res.send(pokemonController.getReducedPokemonData(pokemon));
+            res.json(pokemonController.getReducedPokemonData(pokemon));
             return;
         }
 
         const level = req.query.level || 5;
         const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
-        res.send(pokemonController.getReducedPokemonData(pokemon));
+        res.json(pokemonController.getReducedPokemonData(pokemon));
     } catch (error) {
         res.status(404).json({error:"pokemon no encontrado"});
     }
@@ -62,7 +73,7 @@ router.get('/fetch/:id', async (req, res) => {
 router.get('/starter', async (req, res) => {
     try {
         const pokemon = await pokemonController.getStarterPokemons();
-        res.send(pokemon);
+        res.json(pokemon);
     }
     catch (error) {
         console.error(error);
@@ -75,7 +86,8 @@ router.post('/attack', async (req, res) => {
         const pokemon1 = req.body.pokemon1;
         const pokemon2 = req.body.pokemon2;
         const result = await pokemonController.attack(pokemon1, pokemon2);
-        res.send(result);
+        console.log("result", result)
+        res.json(result);
     } catch (error) {
         console.error(error)
         res.status(404).json({error:"pokemon no encontrado"});
@@ -86,7 +98,7 @@ router.put('/level', async (req, res) => {
     try {
         const pokemon = req.body.pokemon;
         const result = await pokemonController.addLevel(pokemon);
-        res.send(result);
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(404).json({error:"pokemon no encontrado"});
@@ -98,7 +110,7 @@ router.delete('/saved/:id', async (req, res) => {
         const id = req.params.id;
         console.log("deleting pokemon", id);
         const pokemon = await pokemonController.deletePokemon(id);
-        res.send(pokemon);
+        res.json(pokemon);
     } catch (error) {
         console.error(error);
         res.status(404).json({error:"pokemon no encontrado"});

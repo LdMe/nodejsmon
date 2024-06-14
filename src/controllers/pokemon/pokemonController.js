@@ -270,7 +270,7 @@ const getPokemonTemplatesFromDb = async (idList = null) => {
         }
         console.log("query finished")
         const pokemonsList = pokemons.map((pokemon) => {
-            return getReducedPokemonData(pokemon,true);
+            return getReducedPokemonData(pokemon);
         })
         pokemonsList.sort((a, b) => { return a.id - b.id });
         return pokemonsList;
@@ -327,7 +327,9 @@ const attack = async (attackerId, defenderId) => {
 
         let attacker = await getPokemonByIdFromDb(attackerId);
         let defender = await getPokemonByIdFromDb(defenderId);
-
+        if(!attacker || !defender){
+            return {error: "Pokemon no encontrado"}
+        }
         if (attacker.hp <= 0 || defender.hp <= 0) {
             return { attacker, defender, damage: 0, typeMultiplier: 1, move: null };
         }
