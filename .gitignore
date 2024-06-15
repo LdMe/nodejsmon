@@ -4,3 +4,4 @@ data/
 coverage/
 .vscode/
 docker-compose.yml
+dump

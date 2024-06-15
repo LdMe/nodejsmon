@@ -13,6 +13,18 @@ const gymSchema = new Schema({
             ref: "Type",
         },
     ],
+    trainers : [
+        {
+            "name": String,
+            "pokemons": [
+                {
+                    level: Number,
+                    id: String,
+                    name: String,
+                }
+            ]
+        }
+    ],
     leaderPokemons: [
         {
         level: Number,

@@ -8,6 +8,9 @@ import { get } from 'mongoose';
 const moveUrl = 'https://pokeapi.co/api/v2/move';
 const filterMovesByLevel = (moves, level) => {
     const filteredMoves = moves.filter((move) => {
+        if (move.level !== null) {
+            return move.level <= level && move.method === 'level-up';
+        }
         return move.version_group_details[0].level_learned_at <= level && move.version_group_details[0].move_learn_method.name === 'level-up';
     });
     return filteredMoves;
@@ -29,10 +32,9 @@ const getNRandomUniqueMoves = async (moves, n) => {
     /* try to get n moves with their data, prioritizing moves with  power */
     while (chosenMoves.length < n && movesToChoose.length > 0) {
         const randomIndex = Math.floor(Math.random() * movesToChoose.length);
-        const move = movesToChoose[randomIndex].move;
+        const move = movesToChoose[randomIndex];
         const moveData = await getMoveData(move);
-        moveData.level_learned_at = movesToChoose[randomIndex].version_group_details[0].level_learned_at;
-        move
+        
         if (moveData.power === null) {
            moveData.power = 0;
         }
@@ -43,6 +45,7 @@ const getNRandomUniqueMoves = async (moves, n) => {
     return chosenMoves;
 }
 const getNRandomUniqueMovesForLevel = async (moves, level, n) => {
+
     const movesToChoose = filterMovesByLevel(moves, level);
     const chosenMoves = await getNRandomUniqueMoves(movesToChoose, n);
 
@@ -55,7 +58,7 @@ const getGoodMovesForLevel = async (moves,level,numMoves=4) => {
     let newMoves = [];
     while (sortedMoves.length > 0 && newMoves.length < numMoves) {
         const move = sortedMoves.pop();
-        const moveData = await getMoveData(move.move);
+        const moveData = await getMoveData(move);
         if (moveData.power >= level) {
             
             newMoves.push(getReducedMoveData(moveData));
@@ -66,11 +69,7 @@ const getGoodMovesForLevel = async (moves,level,numMoves=4) => {
 
 const changeBadMoveForGoodMove = async (oldActiveMoves,moves,level) => {
     const activeMoves = [...oldActiveMoves];
-    /* const goodMoveIndex = moves.findIndex((move) => move.power >= level);
-    if (!goodMoveIndex === -1) {
-        return activeMoves;
-    } */
-    console.log("changing bad move for good move")
+    
     const goodMoves = await getGoodMovesForLevel(moves, level,4);
     if (goodMoves.length === 0) {
         return activeMoves;
@@ -92,15 +91,16 @@ const changeBadMoveForGoodMove = async (oldActiveMoves,moves,level) => {
     return activeMoves;
 }
 
-    
+const getMoveData = async(move,reduced=false) =>{
 
-
-
-
-const getMoveData = async(move) =>{
+    if(!move){
+        return null;
+    }
     const existingMove = await MoveTemplate.findOne({name:move.name});
-    
     if(existingMove){
+        if(reduced){
+            return getReducedMoveData(existingMove);
+        }
         return existingMove;
     }
     const url = `${moveUrl}/${move.name}`;
@@ -110,7 +110,7 @@ const getMoveData = async(move) =>{
     }
     data.power = data.power || 0;
     const typeData = await getTypeData(data.type);
-    
+
     const newMove = new MoveTemplate(data);
     newMove.type = typeData;
     await newMove.save();
@@ -159,7 +159,24 @@ const addMove = async(pokemon,move)=>{
     await newPokemon.save();
     return newPokemon;
 }
-  
+const getReducedMoveDataFromDb = async (name) => {
+    try {
+        const move = await MoveTemplate.findOne({name});
+        return getReducedMoveData(move);
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+const getMoveIdFromName = async (name) => {
+    try {
+        const move = await MoveTemplate.findOne({name});
+        return move._id;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
 const getReducedMoveData = (move) => {
     return {
         _id: move._id,
@@ -180,5 +197,7 @@ export {
     getMoveData,
     addMove,
     getReducedMoveData,
+    getReducedMoveDataFromDb,
     changeBadMoveForGoodMove,
+    getMoveIdFromName
 }

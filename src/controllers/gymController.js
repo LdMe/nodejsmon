@@ -1,10 +1,14 @@
 import GymModel from '../models/gym.js';
-import {getPokemonTemplatesFromDb} from '../controllers/pokemon/pokemonController.js';
+//import {getPokemonTemplateFromDb} from '../controllers/pokemon/pokemonController.js';
+import { fetchPokemon } from './pokemon/pokemonController.js';
 const getAllGyms = async () => {
     try {
+
         const gyms = await GymModel.find();
-        const newGyms = await Promise.all(gyms.map((gym) => {
-           return  getPokemonsData(gym);
+
+        const newGyms = await Promise.all(gyms.map(async (gym) => {
+            const gymData =  await getGymData( gym.toObject());
+           return  gymData;
         }));
         return newGyms;
     }
@@ -13,21 +17,30 @@ const getAllGyms = async () => {
         return [];
     }
 }
-const getPokemonsData =async (gym) => {
-    const ids = gym.leaderPokemons.map((pokemon) => pokemon._id);
-    const pokemons = await getPokemonTemplatesFromDb(ids);
-    console.log("pokemons", pokemons);
-    const newGym = gym.toObject();
-    newGym.leaderPokemons = pokemons;
-    gym.leaderPokemons.forEach((pokemon) => {
-        const index = newGym.leaderPokemons.findIndex((p) => p._id.equals(pokemon._id));
-        newGym.leaderPokemons[index].level = pokemon.level;
-    });
+const getGymData = async (gym) => {
+    const newGym = {...gym};
+    newGym.trainers = await Promise.all(newGym.trainers.filter(trainer => trainer).map((trainer) => getTrainerData(trainer)));
     return newGym;
+}
+const getTrainerData = async (trainer) => {
+    const newTrainer = {...trainer};
+    newTrainer.pokemons = await getPokemonsData(trainer);
+    return newTrainer;
+}
+const getPokemonsData = async (trainer) => { 
+    console.log("pokemon triner", trainer);
+   const pokemons = await Promise.all(trainer.pokemons.map((pokemon) => fetchPokemon(pokemon.name)));
+   return pokemons.map((pokemon) => {
+    console.log("pokemon", pokemon);
+    console.log("trainer", trainer.pokemons);
+       pokemon.level = trainer.pokemons.find((p) => p._id.equals(pokemon._id)).level;
+       return pokemon;
+   });
 }
 const getGym = async (id) => {
     try {
         const gym = await GymModel.findById(id);
+        const newGym = await getGymData(gym);
         return gym;
     }
     catch (error) {

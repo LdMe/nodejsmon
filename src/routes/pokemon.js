@@ -28,7 +28,16 @@ router.get('/templates', async (req, res) => {
         res.status(500).json({error:"error al buscar pokemon"});
     }
 })
-
+router.get('/fetch/all', async (req, res) => {
+    try {
+        await pokemonController.fetchAllPokemonsFromApi();
+        res.json({message:"pokemons fetched"});
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"error al buscar pokemon"});
+    }
+});
 router.get('/fetch/random', async (req, res) => {
     try {
         const level = req.query.level || 5;
@@ -59,13 +68,15 @@ router.get('/fetch/:id', async (req, res) => {
         // if id is a number, it is the id of the generic pokemon, if it is a string, it is the _id of the pokemon in the database
         if (isNaN(id)) {
             const pokemon = await pokemonController.getPokemonByIdFromDb(id);
-            res.json(pokemonController.getReducedPokemonData(pokemon));
+            res.json(pokemon);
             return;
         }
 
         const level = req.query.level || 5;
+        console.log("level", level);
         const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
-        res.json(pokemonController.getReducedPokemonData(pokemon));
+        console.log("pokemon", pokemon)
+        res.json(pokemon);
     } catch (error) {
         res.status(404).json({error:"pokemon no encontrado"});
     }

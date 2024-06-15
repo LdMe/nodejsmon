@@ -28,38 +28,13 @@
 import mongoose, { Schema } from "mongoose";
 
 const moveSchema = new Schema({
-    name: String,
+    name: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
     accuracy: Number,
-    contest_combos: {
-        normal: {
-            use_after: [{
-                name: String,
-                url: String,
-            }],
-            use_before: [{
-                name: String,
-                url: String,
-            }],
-        },
-        super: {
-            use_after: [{
-                name: String,
-                url: String,
-            }],
-            use_before: [{
-                name: String,
-                url: String,
-            }],
-        },
-    },
-    contest_effect: {
-        url: String,
-    },
-    contest_type: {
-        name: String,
-        url: String,
-    },
-
     damage_class: {
         name: String,
         url: String,
@@ -78,24 +53,6 @@ const moveSchema = new Schema({
             url: String,
         },
     }],
-    effect_entries: [{
-        effect: String,
-        language: {
-            name: String,
-            url: String,
-        },
-    }],
-    flavor_text_entries: [{
-        flavor_text: String,
-        language: {
-            name: String,
-            url: String,
-        },
-        version_group: {
-            name: String,
-            url: String,
-        },
-    }],
     generation: {
         name: String,
         url: String,
@@ -104,63 +61,12 @@ const moveSchema = new Schema({
         name: String,
         url: String,
     }],
-    machines: [{
-        machine: {
-            name: String,
-            url: String,
-        },
-        version_group: {
-            name: String,
-            url: String,
-        },
-    }],
-    meta: {
-        ailment: {
-            name: String,
-            url: String,
-        },
-        ailment_chance: Number,
-        category: {
-            name: String,
-            url: String,
-        },
-        crit_rate: Number,
-        drain: Number,
-        flinch_chance: Number,
-        healing: Number,
-        max_hits: Number,
-        max_turns: Number,
-        min_hits: Number,
-        min_turns: Number,
-        stat_chance: Number,
-    },
     names: [{
         language: {
             name: String,
             url: String,
         },
         name: String,
-    }],
-    past_values: [{
-        accuracy: Number,
-        effect_chance: Number,
-        effect_entries: [{
-            effect: String,
-            language: {
-                name: String,
-                url: String,
-            },
-        }],
-        power: Number,
-        pp: Number,
-        type: {
-            name: String,
-            url: String,
-        },
-        version_group: {
-            name: String,
-            url: String,
-        },
     }],
     power: Number,
     pp: Number,
@@ -172,9 +78,6 @@ const moveSchema = new Schema({
             url: String,
         },
     }],
-    super_contest_effect: {
-        url: String,
-    },
     target: {
         name: String,
         url: String,
@@ -183,7 +86,7 @@ const moveSchema = new Schema({
         type:Schema.Types.ObjectId,
         ref:"Type",
     },
-},{strict:false});
+},{strict:true});
 
 moveSchema.pre('find', function() {
     this.populate('type');

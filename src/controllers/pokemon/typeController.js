@@ -2,10 +2,14 @@ import {getName} from "./utils.js";
 import {fetchData} from "./utils.js";
 import TypeTemplate from "../../models/templates/type.js";
 const typeUrl = 'https://pokeapi.co/api/v2/type';
-const getTypesData = async (pokemon) => {
+const getTypesData = async (pokemon,reduced=false) => {
     const types = pokemon.types;
+    console.log("types",types);
     const typesData = await Promise.all(types.map(async (type) => {
-        const typeData = await getTypeData(type.type);
+        const typeData = await getTypeData({name:type });
+        if(reduced){
+            return getReducedTypeData(typeData);
+        }
         return typeData;
     }));
     return typesData;

@@ -1,91 +1,86 @@
-
-import Pokemon from "../../models/pokemon.js";
-import { getReducedTypeData, getTypesData } from "./typeController.js";
-import { filterMovesByLevel, getNRandomUniqueMovesForLevel } from "./moveController.js";
-import { getMaxHp, randomizeStatValues, copyStatMultipliers } from "./statsController.js";
-import { evolve, getEvolutions } from "./evolutionController.js";
-import { addMove, getMoveData, getReducedMoveData, changeBadMoveForGoodMove } from "./moveController.js";
-import { getTypeData } from "./typeController.js";
-import { getSpecies } from "./speciesController.js";
-import { fetchData } from "./utils.js";
-import PokemonTemplate from "../../models/templates/pokemon.js";
 import dotenv from "dotenv";
-import { get } from "mongoose";
+import Pokemon from "../../models/pokemon.js";
+import PokemonTemplate from "../../models/templates/pokemon.js";
+import {getReducedTypeData, getTypesData} from "./typeController.js";
+import {filterMovesByLevel, getMoveIdFromName, getNRandomUniqueMovesForLevel, getReducedMoveDataFromDb, getMoveData, changeBadMoveForGoodMove, addMove} from "./moveController.js";
+import {getMaxHp, randomizeStatValues, copyStatMultipliers} from "./statsController.js";
+import {evolve, getEvolutions} from "./evolutionController.js";
+import { getSpecies} from "./speciesController.js";
+import {fetchData} from "./utils.js";
 
 dotenv.config();
 
 const pokemonUrl = 'https://pokeapi.co/api/v2/pokemon';
 const MAX_POKEMON = process.env.MAX_POKEMON || 2;
 
-
+const fetchAllPokemonsFromApi = async () => {
+    
+    for (let i = 1; i <= MAX_POKEMON; i++) {
+        console.log("fetching pokemon", i);
+        const pokemon = await fetchPokemon(i);
+    }
+}
 
 const fetchPokemon = async (idOrName) => {
     try {
-        // find a pokemon in db by id or name
         const existingPokemon = await PokemonTemplate.findOne({ $or: [{ id: idOrName }, { name: idOrName }] });
+
         if (existingPokemon) {
             return existingPokemon;
         }
         const url = `${pokemonUrl}/${idOrName}`;
         const [error, data] = await fetchData(url);
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
-        const pokemon = new PokemonTemplate(data);
-        await pokemon.save();
-        return pokemon;
+        const reducedPokemon = getReducedPokemonData(data);
+        const shortPokemon = await PokemonTemplate.create(reducedPokemon);
+        await shortPokemon.save();
+        return shortPokemon;
     } catch (error) {
         console.error(error);
         return null;
     }
-}
+};
 
 
-const getNewPokemon = async (id, options = { level: 5, stats: null, activeMoves: [], canBeShiny: false, save: false, trainer: false }) => {
+const getNewPokemon = async (id,  options = {}) => {
+    const defaultOptions = { level: 5, stats: null, activeMoves: [], canBeShiny: false, save: false, trainer: false };
+    const { level, stats, activeMoves, canBeShiny, save, trainer } = { ...defaultOptions, ...options };
     try {
-        let { level, stats, activeMoves, canBeShiny, save, trainer } = options;
-        //set default values
-        level = level || 5;
-        stats = stats || null;
-        activeMoves = activeMoves || [];
-        canBeShiny = canBeShiny === false ? false : true;
-        save = save || false;
-        level = Math.min(level, 100);
-        trainer = trainer || false;
+
         let pokemon = await fetchPokemon(id);
-        pokemon.level = level;
+        pokemon.level = Math.min(level, 100);
         let evolutions = await getEvolutions(pokemon);
         pokemon.evolutions = evolutions;
+
         const evolvedName = evolve(pokemon);
         if (evolvedName && evolvedName !== pokemon.name) {
-            pokemon = await fetchPokemon(evolvedName);
-            pokemon.level = level;
-            evolutions = await getEvolutions(pokemon);
-            pokemon.evolutions = evolutions;
-        }
-        if (activeMoves.length === 0) {
-            activeMoves = await getNRandomUniqueMovesForLevel(pokemon.moves, level, 4);
-            if (trainer) {
-                console.log("changing bad moves for good moves")
-                console.log(activeMoves.map((move) => move.name))
-                activeMoves = await changeBadMoveForGoodMove(activeMoves, pokemon.moves, level);
-                console.log("after changing bad moves for good moves")
-                console.log(activeMoves.map((move) => move.name))
+            const newPokemon = await fetchPokemon(evolvedName);
+            if(newPokemon.id <= MAX_POKEMON){
+                pokemon = newPokemon;
+                pokemon.level = level;
+                evolutions = await getEvolutions(pokemon);
+                pokemon.evolutions = evolutions;
             }
-
+        }
+        let newActiveMoves = activeMoves;
+        if (newActiveMoves.length === 0) {
+            newActiveMoves = await getNRandomUniqueMovesForLevel(pokemon.moves, level, 4);
+            if (trainer) {
+                newActiveMoves = await changeBadMoveForGoodMove(newActiveMoves, pokemon.moves, level);
+            }
         }
         const isShiny = canBeShiny && Math.random() < 0.1;
         if (stats) {
             pokemon.stats = copyStatMultipliers(stats, pokemon.stats);
-        }
-        else {
+        } else {
             pokemon.stats = randomizeStatValues(pokemon.stats);
         }
-        const types = await getTypesData(pokemon);
+        const types = await getTypesData(pokemon,true);
         const species = await getSpecies(pokemon);
-        const dbActiveMoves = await Promise.all(activeMoves.map(async (move) => {
-            const moveData = await getMoveData(move);
+        
+        const dbActiveMoves = await Promise.all(newActiveMoves.map(async (move) => {
+            const moveData = await getMoveData(move, true);
             return moveData;
         }));
 
@@ -103,7 +98,7 @@ const getNewPokemon = async (id, options = { level: 5, stats: null, activeMoves:
             id: pokemon.id,
             shiny: isShiny,
             types: types,
-            species: species,
+            species: species._id,
             activeMoves: dbActiveMoves
 
         }
@@ -153,12 +148,11 @@ const getNewRandomPokemon = async (level = 5, trainer = false) => {
         newPokemon = await getNewPokemon(randomId, { level, trainer });
 
     }
-
     const newPokemonDb = new Pokemon(newPokemon);
     await newPokemonDb.save();
-    const reducedPokemon = getReducedPokemonData(newPokemonDb);
-    return reducedPokemon;
+    return newPokemonDb;
 }
+
 const getPokemons = async (idList, level = 5) => {
     const pokemons = await Promise.all(idList.map(async (id) => {
         const pokemon = await getNewPokemon(id, { level, canBeShiny: false });
@@ -169,10 +163,8 @@ const getPokemons = async (idList, level = 5) => {
 
 const getStarterPokemons = async () => {
     const starterPokemons = await getPokemons([1, 4, 7], 5);
-
     return starterPokemons;
 }
-
 
 const updatePokemon = async (pokemon) => {
     const pokemonFromDb = await Pokemon.findById(pokemon._id);
@@ -201,11 +193,12 @@ const addLevel = async (pokemonId) => {
 
         let dbPokemon = await Pokemon.findById(pokemonId);
         if (dbPokemon.level >= 100) {
-            return getReducedPokemonData(dbPokemon);
+            return dbPokemon;
         }
         dbPokemon.level++;
         dbPokemon.maxHp = getMaxHp(dbPokemon);
         await dbPokemon.save();
+
         const evolvedPokemonName = await evolve(dbPokemon);
         if (evolvedPokemonName && evolvedPokemonName !== dbPokemon.name) {
             const evolvedPokemon = await getNewPokemon(evolvedPokemonName, { level: dbPokemon.level, stats: dbPokemon.stats, activeMoves: dbPokemon.activeMoves });
@@ -217,13 +210,13 @@ const addLevel = async (pokemonId) => {
 
         const availableMoves = filterMovesByLevel(dbPokemon.moves, dbPokemon.level);
         const levelMoves = availableMoves.filter((move) => {
-            return move.version_group_details[0].level_learned_at === dbPokemon.level;
+            return move.level === dbPokemon.level;
         });
         for (const move of levelMoves) {
-            dbPokemon = await addMove(dbPokemon, move.move);
+            dbPokemon = await addMove(dbPokemon, move);
         }
 
-        return getReducedPokemonData(dbPokemon);
+        return dbPokemon;
     }
     catch (error) {
         console.error(error);
@@ -240,7 +233,7 @@ const getPokemonsFromDb = async (idList = null) => {
         else {
             pokemons = await Pokemon.find();
         }
-        return pokemons.map(pokemon => getReducedPokemonData(pokemon));
+        return pokemons;
     } catch (error) {
         console.error(error);
         return [];
@@ -260,29 +253,29 @@ const getPokemonByIdFromDb = async (id) => {
 const getPokemonTemplatesFromDb = async (idList = null) => {
     try {
         let pokemons = [];
-        console.log("query started")
         if (idList) {
             pokemons = await PokemonTemplate.find({ _id: { $in: idList } });
         }
         else {
-            console.log("without id list")
+
             pokemons = await PokemonTemplate.find();
         }
-        console.log("query finished")
-        const pokemonsList = pokemons.map((pokemon) => {
-            return getReducedPokemonData(pokemon);
-        })
-        pokemonsList.sort((a, b) => { return a.id - b.id });
-        return pokemonsList;
-            
+        return pokemons.sort((a, b) => { return a.id - b.id });
     } catch (error) {
         console.error(error);
         return [];
     }
 }
 
-
-
+const getPokemonTemplateFromDb = async (id) => {
+    try {
+        const pokemon = await PokemonTemplate.findById(id);
+        return pokemon;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
 
 const getDamage = async (attacker, defender, moveName) => {
     const move = await getMoveData(moveName);
@@ -335,6 +328,7 @@ const attack = async (attackerId, defenderId) => {
         }
         const randomIndex = Math.floor(Math.random() * attacker.activeMoves.length);
         const move = attacker.activeMoves[randomIndex];
+
         //let damage = move.power * attacker.level;
         let { damage, typeMultiplier } = await getDamage(attacker, defender, move);
         if (damage < 0) {
@@ -361,8 +355,8 @@ const attack = async (attackerId, defenderId) => {
         }
 
         return {
-            attacker: getReducedPokemonData(attacker),
-            defender: getReducedPokemonData(defender),
+            attacker,
+            defender,
             damage,
             typeMultiplier,
             move
@@ -389,13 +383,30 @@ const deletePokemon = async (pokemonId) => {
 }
 const getReducedPokemonData = (pokemon,short=false) => {
     const types = pokemon.types.map((type) => {
-        return getReducedTypeData(type);
+        return type.type?.name || type.name || type;
     });
+    console.log("types: ",types)
     let activeMoves = [];
-    if (pokemon.activeMoves) {
+    /* if (pokemon.activeMoves) {
         activeMoves = pokemon.activeMoves.map((move) => {
-            return getReducedMoveData(move);
+            try{
+                return getReducedMoveData(move);
+            }
+            catch(error){
+                console.error(error);
+                return null;
+            }
         });
+    } */
+   if( pokemon.moves){
+
+        pokemon.moves = pokemon.moves.map((move) => {
+            return {
+                name: move.move.name,
+                level: move.version_group_details[0].level_learned_at,
+                method: move.version_group_details[0].move_learn_method.name
+            }
+        }); 
     }
     const sprites = {
         front_default: pokemon.sprites.versions['generation-v']['black-white'].animated.front_default,
@@ -426,7 +437,8 @@ const getReducedPokemonData = (pokemon,short=false) => {
         sprites: sprites,
         stats: pokemon.stats,
         abilities: pokemon.abilities,
-        activeMoves: activeMoves,
+        activeMoves: pokemon.activeMoves,
+        moves: pokemon.moves,
         baseHp: pokemon.baseHp,
         maxHp: pokemon.maxHp,
         hp: pokemon.hp,
@@ -434,7 +446,10 @@ const getReducedPokemonData = (pokemon,short=false) => {
         shiny: pokemon.shiny,
         types: types,
         nextEvolution: nextEvolution,
+        evolutions: pokemon.evolutions,
+        species: pokemon.species,
     }
+    //PokemonShort.findByIdAndUpdate( pokemon._id ,newPokemon,{ upsert: true  });
     return newPokemon;
 }
 export default {
@@ -447,7 +462,11 @@ export default {
     getPokemonByIdFromDb,
     getPokemonTemplatesFromDb,
     deletePokemon,
-    getReducedPokemonData
+    fetchAllPokemonsFromApi,
+    fetchPokemon,
+    getReducedPokemonData,
+    updatePokemon
+    
 }
 
 export {
@@ -460,5 +479,7 @@ export {
     getPokemonByIdFromDb,
     getPokemonTemplatesFromDb,
     deletePokemon,
-    getReducedPokemonData
+    fetchPokemon,
+    getReducedPokemonData,
+    updatePokemon
 }

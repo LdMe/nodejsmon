@@ -17,7 +17,12 @@
 import mongoose, { Schema } from "mongoose";
 
 const typeSchema = new Schema({
-    name: String,
+    name: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
     nameEs: String,
     damage_relations: {
         double_damage_from: [{

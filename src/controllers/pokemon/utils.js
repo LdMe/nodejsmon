@@ -10,7 +10,10 @@ const getName = (names,language) => {
 }
 
 const fetchData = async (url,options) => {
-    console.log("fetching data",url)
+    console.log("fetching data from: ",url,options);
+    if(url.includes("undefined")){
+        throw new Error("url is undefined");
+    }
     try{
         const response = await fetch(url,options);
         const data = await response.json();

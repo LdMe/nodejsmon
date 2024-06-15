@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 import Pokemon from "../models/pokemon.js";
-import pokemonController, { getNewPokemon } from "./pokemon/pokemonController.js";
+import pokemonController, { getNewPokemon, getReducedPokemonData } from "./pokemon/pokemonController.js";
 const addPokemonToUser = async (username, pokemonId) => {
 
     const user = await User.findOne({ username }).populate("pokemons");
@@ -59,13 +59,14 @@ const savePokemonToPc = async (username, pokemonId) => {
         user.savedPokemons.push(pokemon);
         user.pokemons = user.pokemons.filter((pokemon) => { return pokemon._id.toString() !== pokemonId });
         await user.save();
-        const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        /* const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
         const savedPokemons = user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
         return {
             username: user.username,
             pokemons: pokemons,
             savedPokemons: savedPokemons,
-        }
+        } */
+       return user;
     }
     catch (e) {
         console.error(e);
@@ -88,13 +89,15 @@ const removePokemonFromPc = async (username, pokemonId) => {
         user.pokemons.push(pokemon);
         user.savedPokemons = user.savedPokemons.filter((pokemon) => { return pokemon._id.toString() !== pokemonId });
         await user.save();
-        const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+        /* const pokemons = user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
         const savedPokemons = user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
         return {
             username: user.username,
             pokemons: pokemons,
             savedPokemons: savedPokemons,
-        }
+        } */
+
+        return user;
     }
     catch (e) {
         console.error(e);
@@ -104,8 +107,11 @@ const removePokemonFromPc = async (username, pokemonId) => {
     }
 }
 const getSavedPokemons = async (username) => {
+
     const user = await User.findOne({ username }).populate("savedPokemons");
-    return user.savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+    const updatedPokemons =  await updatePokemonsVersion(user.savedPokemons);
+
+    return updatedPokemons;
 }
 const fixStatMultiplier = (stats) => {
     for (const stat of stats) {
@@ -113,9 +119,23 @@ const fixStatMultiplier = (stats) => {
     }
     return stats;
 }
+const updatePokemonsVersion = async (pokemons) => {
+
+    const updatedPokemons = await Promise.all(pokemons.map(async (pokemon) => {
+        if(pokemon.sprites.versions){
+            const newPokemon = pokemonController.getReducedPokemonData(pokemon);
+            newPokemon._id = pokemon._id;
+            await pokemonController.updatePokemon(newPokemon);
+            return newPokemon;
+        }
+        return pokemon;
+    }))
+    return updatedPokemons;
+}
 const getUserPokemons = async (username) => {
     const user = await User.findOne({ username }).populate("pokemons");
-    return user.pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
+    const updatedPokemons = await updatePokemonsVersion(user.pokemons);
+    return updatedPokemons;
 }
 /*
 cambiamos los pokemons del usuario por los que se introducen, si no existen los creamos, si existen los actualizamos, tanto de contenido como de orden
@@ -182,8 +202,8 @@ const swapPokemons = async (username, id1, id2) => {
     if ((index1 === 0 && pokemon2.hp === 0) || (index2 === 0 && pokemon1.hp === 0)) {
         return {
             username: user.username,
-            pokemons: pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon)),
-            savedPokemons : savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon))
+            pokemons: pokemons,//.map((pokemon) => pokemonController.getReducedPokemonData(pokemon)),
+            savedPokemons : savedPokemons//.map((pokemon) => pokemonController.getReducedPokemonData(pokemon))
         }
     }
     const aux = pokemon1;
@@ -202,13 +222,15 @@ const swapPokemons = async (username, id1, id2) => {
     user.pokemons = pokemons;
     user.savedPokemons = savedPokemons;
     await user.save();
+    return user;
+    /* 
     const reducedPokemons = pokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
     const reducedSavedPokemons = savedPokemons.map((pokemon) => pokemonController.getReducedPokemonData(pokemon));
     return {
         username: user.username,
         pokemons: reducedPokemons,
         savedPokemons : reducedSavedPokemons,
-    }
+    } */
 }
 
 const removePokemon = async (username, id) => {
