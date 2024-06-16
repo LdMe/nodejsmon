@@ -14,7 +14,7 @@ router.use('/pokemon', isAuth,PokemonRouter);
 router.use('/user', AuthRouter);
 router.use('/user', isAuth,UserRouter);
 router.use('/admin', isAdmin,AdminRouter);
-router.use('/gyms', isAdmin,GymRouter);
+router.use('/gyms', isAuth,GymRouter);
 
 export default router;
 

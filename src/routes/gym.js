@@ -1,6 +1,6 @@
 import gymController from "../controllers/gymController.js";
 import { Router } from "express";
-
+import { isAdmin } from "../middleware/authMiddleware.js";
 const router = Router();
 
 router.get("/", async(req, res) => {
@@ -25,7 +25,7 @@ router.get("/:id", async(req, res) => {
     }
 });
 
-router.post("/", async(req, res) => {
+router.post("/", isAdmin,async(req, res) => {
     try {
         const gym = await gymController.createGym(req.body);
         res.json(gym);
@@ -36,7 +36,7 @@ router.post("/", async(req, res) => {
     }
 });
 
-router.put("/:id", async(req, res) => {
+router.put("/:id", isAdmin,async(req, res) => {
     try {
         const gym = await gymController.updateGym(req.params.id, req.body);
         res.json(gym);
@@ -47,7 +47,7 @@ router.put("/:id", async(req, res) => {
     }
 });
 
-router.delete("/:id", async(req, res) => {
+router.delete("/:id",isAdmin, async(req, res) => {
     try {
         const gym = await gymController.deleteGym(req.params.id);
         res.json(gym);
