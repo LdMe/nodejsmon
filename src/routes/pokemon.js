@@ -75,7 +75,15 @@ router.get('/fetch/:id', async (req, res) => {
         const level = req.query.level || 5;
         console.log("level", level);
         const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
-        console.log("pokemon", pokemon)
+        console.log("pokemon", pokemon._id)
+        //console.log("pokemon", pokemon)
+        const user = req.user;
+        if (user.username) {
+            const userDb = await User.findOne({ username: user.username });
+            userDb.enemies.push(pokemon._id);
+            console.log("enemies", userDb.enemies.length)
+            await userDb.save();
+        }
         res.json(pokemon);
     } catch (error) {
         res.status(404).json({error:"pokemon no encontrado"});

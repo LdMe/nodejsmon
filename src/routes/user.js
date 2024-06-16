@@ -142,7 +142,18 @@ router.post("/clear", (req, res) => {
         res.status(500).json({error:"Error interno"});
     }
 });
-
+router.put("/maxlevel", (req, res) => {
+    try {
+        const username = req.user.username;
+        const maxLevel = req.body.maxLevel;
+        userController.setMaxLevel(username, maxLevel);
+        res.json({message:"ok"});
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"Error interno"});
+    }
+});
 
 
 export default router;

@@ -58,7 +58,8 @@ const login = async (req, res) => {
         {
             username: oldUser.username,
             id: oldUser._id,
-            role: oldUser.role
+            role: oldUser.role,
+            maxLevel: oldUser.maxLevel
         },
         token
     });

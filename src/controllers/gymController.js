@@ -7,8 +7,8 @@ const getAllGyms = async () => {
         const gyms = await GymModel.find();
 
         const newGyms = await Promise.all(gyms.map(async (gym) => {
-            const gymData =  await getGymData( gym.toObject());
-           return  gymData;
+            const gymData = await getGymData(gym.toObject());
+            return gymData;
         }));
         return newGyms;
     }
@@ -18,24 +18,25 @@ const getAllGyms = async () => {
     }
 }
 const getGymData = async (gym) => {
-    const newGym = {...gym};
+    const newGym = { ...gym };
     newGym.trainers = await Promise.all(newGym.trainers.filter(trainer => trainer).map((trainer) => getTrainerData(trainer)));
     return newGym;
 }
 const getTrainerData = async (trainer) => {
-    const newTrainer = {...trainer};
+    const newTrainer = { ...trainer };
     newTrainer.pokemons = await getPokemonsData(trainer);
     return newTrainer;
 }
-const getPokemonsData = async (trainer) => { 
+const getPokemonsData = async (trainer) => {
     console.log("pokemon triner", trainer);
-   const pokemons = await Promise.all(trainer.pokemons.map((pokemon) => fetchPokemon(pokemon.name)));
-   return pokemons.map((pokemon) => {
-    console.log("pokemon", pokemon);
-    console.log("trainer", trainer.pokemons);
-       pokemon.level = trainer.pokemons.find((p) => p._id.equals(pokemon._id)).level;
-       return pokemon;
-   });
+    const pokemons = await Promise.all(trainer.pokemons.map((pokemon) => fetchPokemon(pokemon.name)));
+    return pokemons.map((pokemon) => {
+        console.log("trainer", trainer.pokemons);
+        const newPokemon = { ...pokemon._doc };
+        newPokemon.level = trainer.pokemons.find((p) => p.name === pokemon.name).level;
+        console.log("pokemon", newPokemon);
+        return newPokemon;
+    });
 }
 const getGym = async (id) => {
     try {
@@ -53,7 +54,7 @@ const createGym = async (gym) => {
     try {
         const oldGym = await GymModel.findOne({ name: gym.name });
         if (oldGym) {
-            return {error:"gimnasio ya existe"};
+            return { error: "gimnasio ya existe" };
         }
         const newGym = new GymModel(gym);
         await newGym.save();
@@ -61,9 +62,9 @@ const createGym = async (gym) => {
     }
     catch (error) {
         console.error(error);
-        return {error:"error al crear gimnasio"};
+        return { error: "error al crear gimnasio" };
     }
-}   
+}
 
 const updateGym = async (id, gym) => {
     try {

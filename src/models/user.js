@@ -50,6 +50,10 @@ const userSchema = new Schema({
         type: Number,
         default: 0
     },
+    maxLevel: {
+        type: Number,
+        default: 10
+    },
 }, { strict: false });
 
 const User = mongoose.model('User', userSchema);

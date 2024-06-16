@@ -256,14 +256,16 @@ const getUser = async (username) => {
     if (!user) {
         return null;
     }
-    const userData = {
-        username: user.username,
-        pokemons: user.pokemons,
-    }
+    const userData = {...user._doc};
+    delete userData.password;
     return userData;
 }
-// funcion para eliminar el pokemon salvaje contra el que se ha luchado
-
+const setMaxLevel = async (username, maxLevel) => {
+    const user = await User.findOne({ username });
+    user.maxLevel = Math.max(user.maxLevel, maxLevel);
+    await user.save();
+    return user;
+}
 const clearFight = async (username) => {
     try {
         const user = await User.findOne({ username }).populate("pokemons");
@@ -345,4 +347,5 @@ export default {
     getConnectedUsers,
     connectUser,
     disconnectUser,
+    setMaxLevel
 }
