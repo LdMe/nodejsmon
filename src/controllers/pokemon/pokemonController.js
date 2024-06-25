@@ -5,7 +5,7 @@ import { getReducedTypeData, getTypesData } from "./typeController.js";
 import { filterMovesByLevel, getMoveIdFromName, getNRandomUniqueMovesForLevel, getReducedMoveDataFromDb, getMoveData, changeBadMoveForGoodMove, addMove } from "./moveController.js";
 import { getMaxHp, randomizeStatValues, copyStatMultipliers } from "./statsController.js";
 import { evolve, getEvolutions } from "./evolutionController.js";
-import { getSpecies } from "./speciesController.js";
+import { getSpecies,getFilteredSpecies } from "./speciesController.js";
 import { fetchData } from "./utils.js";
 
 dotenv.config();
@@ -19,6 +19,7 @@ const fetchAllPokemonsFromApi = async () => {
         console.log("fetching pokemon", i);
         const pokemon = await fetchPokemon(i);
         const types = await getTypesData(pokemon);
+        const evolutions = await getEvolutions(pokemon);
     }
 }
 
@@ -116,6 +117,14 @@ const getNewPokemon = async (id, options = {}) => {
     }
 
 }
+const getLegendaryPokemons = async () => {
+    const legendarySpecies = await getFilteredSpecies({ $or: [{ is_legendary: true }, { is_mythical: true }] });
+    /* const legendaryPokemons = await Promise.all(legendarySpecies.map(async (species) => {
+        const pokemon = await PokemonTemplate.findOne({ species: species._id });
+        return pokemon;
+    })); */
+    return legendarySpecies;
+}
 const getCurrentEvolution = (pokemon) => {
     const evolution = pokemon.evolutions.find((evolution) => evolution.name === pokemon.name);
     return evolution;
@@ -141,8 +150,11 @@ const checkEvolutionIsCorrectForWildPokemon = (pokemon) => {
     return true;
 }
 const getNewRandomPokemon = async (level = 5, trainer = false) => {
-
+    console.log("getNewRandomPokemon", level, trainer);
     let randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
+    /* const legendaryPokemons = await getLegendaryPokemons();
+    console.log("legendary pokemons", legendaryPokemons);
+    let randomName = legendaryPokemons[Math.floor(Math.random() * legendaryPokemons.length)].name; */
     let newPokemon = await getNewPokemon(randomId, { level, trainer });
 
     while (!checkEvolutionIsCorrectForWildPokemon(newPokemon)) {
@@ -458,7 +470,8 @@ export default {
     fetchAllPokemonsFromApi,
     fetchPokemon,
     getReducedPokemonData,
-    updatePokemon
+    updatePokemon,
+    getLegendaryPokemons,
 
 }
 
@@ -474,5 +487,6 @@ export {
     deletePokemon,
     fetchPokemon,
     getReducedPokemonData,
-    updatePokemon
+    updatePokemon,
+    getLegendaryPokemons
 }

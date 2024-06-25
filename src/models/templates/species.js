@@ -27,7 +27,11 @@
 import mongoose, { Schema } from "mongoose";
 
 const speciesSchema = new Schema({
-    name: String,
+    name: {
+        type: String,
+        required: true,
+        unique: true
+    },
     base_happiness: Number,
     capture_rate: Number,
     color: {
@@ -45,25 +49,7 @@ const speciesSchema = new Schema({
         name: String,
         url: String,
     },
-    flavor_text_entries: [{
-        flavor_text: String,
-        language: {
-            name: String,
-            url: String,
-        },
-        version: {
-            name: String,
-            url: String,
-        },
-    }],
     gender_rate: Number,
-    genera: [{
-        genus: String,
-        language: {
-            name: String,
-            url: String,
-        },
-    }],
     generation: {
         name: String,
         url: String,
@@ -89,21 +75,7 @@ const speciesSchema = new Schema({
         name: String,
     }],
     order: Number,
-    pal_park_encounters: [{
-        area: {
-            name: String,
-            url: String,
-        },
-        base_score: Number,
-        rate: Number,
-    }],
-    pokedex_numbers: [{
-        entry_number: Number,
-        pokedex: {
-            name: String,
-            url: String,
-        },
-    }],
+ 
 
 },{strict:true});
 

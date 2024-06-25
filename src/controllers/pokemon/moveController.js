@@ -34,7 +34,10 @@ const getNRandomUniqueMoves = async (moves, n) => {
         const randomIndex = Math.floor(Math.random() * movesToChoose.length);
         const move = movesToChoose[randomIndex];
         const moveData = await getMoveData(move);
-        
+        if(!moveData){
+            movesToChoose.splice(randomIndex, 1);
+            continue;
+        }
         if (moveData.power === null) {
            moveData.power = 0;
         }
@@ -59,6 +62,7 @@ const getGoodMovesForLevel = async (moves,level,numMoves=4) => {
     while (sortedMoves.length > 0 && newMoves.length < numMoves) {
         const move = sortedMoves.pop();
         const moveData = await getMoveData(move);
+        if(!moveData) continue;
         if (moveData.power >= level) {
             
             newMoves.push(getReducedMoveData(moveData));
@@ -92,30 +96,35 @@ const changeBadMoveForGoodMove = async (oldActiveMoves,moves,level) => {
 }
 
 const getMoveData = async(move,reduced=false) =>{
-
-    if(!move){
+    try {
+        if(!move){
+            return null;
+        }
+        const existingMove = await MoveTemplate.findOne({name:move.name});
+        if(existingMove){
+            if(reduced){
+                return getReducedMoveData(existingMove);
+            }
+            return existingMove;
+        }
+        const url = `${moveUrl}/${move.name}`;
+        const [error,data] = await fetchData(url);
+        if(error){
+            throw error;
+        }
+        data.power = data.power || 0;
+        const typeData = await getTypeData(data.type);
+    
+        const newMove = new MoveTemplate(data);
+        newMove.type = typeData;
+        await newMove.save();
+        
+        return newMove;
+    } catch (error) {
+        console.error(error);
         return null;
     }
-    const existingMove = await MoveTemplate.findOne({name:move.name});
-    if(existingMove){
-        if(reduced){
-            return getReducedMoveData(existingMove);
-        }
-        return existingMove;
-    }
-    const url = `${moveUrl}/${move.name}`;
-    const [error,data] = await fetchData(url);
-    if(error){
-        throw error;
-    }
-    data.power = data.power || 0;
-    const typeData = await getTypeData(data.type);
-
-    const newMove = new MoveTemplate(data);
-    newMove.type = typeData;
-    await newMove.save();
     
-    return newMove;
 }
 
 const addMove = async(pokemon,move)=>{

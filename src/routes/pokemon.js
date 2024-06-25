@@ -136,4 +136,8 @@ router.delete('/saved/:id', async (req, res) => {
     }
 });
 router.get("/habitats", habitatController.getHabitats);
+router.get("/legendary",async(req,res)=>{
+    const pokemons = await pokemonController.getLegendaryPokemons();
+    res.json(pokemons);
+});
 export default router;
