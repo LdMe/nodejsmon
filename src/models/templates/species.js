@@ -75,6 +75,7 @@ const speciesSchema = new Schema({
         name: String,
     }],
     order: Number,
+    id:Number
  
 
 },{strict:true});

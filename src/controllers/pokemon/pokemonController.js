@@ -4,14 +4,14 @@ import PokemonTemplate from "../../models/templates/pokemon.js";
 import { getReducedTypeData, getTypesData } from "./typeController.js";
 import { filterMovesByLevel, getMoveIdFromName, getNRandomUniqueMovesForLevel, getReducedMoveDataFromDb, getMoveData, changeBadMoveForGoodMove, addMove } from "./moveController.js";
 import { getMaxHp, randomizeStatValues, copyStatMultipliers } from "./statsController.js";
-import { evolve, getEvolutions } from "./evolutionController.js";
-import { getSpecies,getFilteredSpecies } from "./speciesController.js";
+import evolutionController,{ evolve, getEvolutions } from "./evolutionController.js";
+import speciesController from "./speciesController.js";
 import { fetchData } from "./utils.js";
 
 dotenv.config();
 
 const pokemonUrl = 'https://pokeapi.co/api/v2/pokemon';
-const MAX_POKEMON = process.env.MAX_POKEMON || 2;
+const MAX_POKEMON = parseInt(process.env.MAX_POKEMON || 2);
 
 const fetchAllPokemonsFromApi = async () => {
 
@@ -19,7 +19,7 @@ const fetchAllPokemonsFromApi = async () => {
         console.log("fetching pokemon", i);
         const pokemon = await fetchPokemon(i);
         const types = await getTypesData(pokemon);
-        const evolutions = await getEvolutions(pokemon);
+        const evolutions = await evolutionController.getEvolutions(pokemon);
     }
 }
 
@@ -52,24 +52,26 @@ const getNewPokemon = async (id, options = {}) => {
 
         let pokemon = await fetchPokemon(id);
         pokemon.level = Math.min(level, 100);
-        let evolutions = await getEvolutions(pokemon);
+        let evolutions = await evolutionController.getEvolutions(pokemon);
         pokemon.evolutions = evolutions;
 
-        const evolvedName = evolve(pokemon);
+        const evolvedName = evolutionController.evolve(pokemon);
         if (evolvedName && evolvedName !== pokemon.name) {
             const newPokemon = await fetchPokemon(evolvedName);
+            console.log("fetched new pokemon", newPokemon.name,newPokemon.id,MAX_POKEMON);
             if (newPokemon.id <= MAX_POKEMON) {
+                console.log("updating pokemon", newPokemon.name,newPokemon.id,MAX_POKEMON);
                 pokemon = newPokemon;
                 pokemon.level = level;
-                evolutions = await getEvolutions(pokemon);
+                evolutions = await evolutionController.getEvolutions(pokemon);
                 pokemon.evolutions = evolutions;
+                console.log("updated pokemon name",pokemon.name)
             }
         }
         let newActiveMoves = activeMoves;
         if (newActiveMoves.length === 0) {
             newActiveMoves = await getNRandomUniqueMovesForLevel(pokemon.moves, level, 4);
             if (trainer) {
-                console.log("trainer", trainer, newActiveMoves, pokemon.moves, level);
                 newActiveMoves = await changeBadMoveForGoodMove(newActiveMoves, pokemon.moves, level);
             }
         }
@@ -80,7 +82,7 @@ const getNewPokemon = async (id, options = {}) => {
             pokemon.stats = randomizeStatValues(pokemon.stats);
         }
         const types = await getTypesData(pokemon, true);
-        const species = await getSpecies(pokemon);
+        const species = await speciesController.getSpecies(pokemon.id);
 
         const dbActiveMoves = await Promise.all(newActiveMoves.map(async (move) => {
             const moveData = await getMoveData(move, true);
@@ -118,54 +120,40 @@ const getNewPokemon = async (id, options = {}) => {
 
 }
 const getLegendaryPokemons = async () => {
-    const legendarySpecies = await getFilteredSpecies({ $or: [{ is_legendary: true }, { is_mythical: true }] });
+    const legendarySpecies = await speciesController.getFilteredSpecies({ $or: [{ is_legendary: true }, { is_mythical: true }] });
     /* const legendaryPokemons = await Promise.all(legendarySpecies.map(async (species) => {
         const pokemon = await PokemonTemplate.findOne({ species: species._id });
         return pokemon;
     })); */
     return legendarySpecies;
 }
-const getCurrentEvolution = (pokemon) => {
-    const evolution = pokemon.evolutions.find((evolution) => evolution.name === pokemon.name);
-    return evolution;
-}
-const getPokemonEvolutionTrigger = (pokemon) => {
-    const evolution = getCurrentEvolution(pokemon)
-    if (!evolution) {
-        return null;
-    }
-    return evolution.trigger;
-}
-const checkEvolutionIsCorrectForWildPokemon = (pokemon) => {
-    if (pokemon === null) {
+const canBeFoundInWild = async (pokemonId) => {
+    const species = await speciesController.getSpecies(pokemonId);
+    console.log(`species: ${species.name} is_baby: ${species.is_baby} is_mythical: ${species.is_mythical} is_legendary: ${species.is_legendary}`);
+    if (!species) {
         return false;
     }
-    if (pokemon.species.is_baby || pokemon.species.is_mythical || pokemon.species.is_legendary || getPokemonEvolutionTrigger(pokemon) !== "level-up") {
-        return false;
-    }
-    const currentEvolution = getCurrentEvolution(pokemon);
-    if (!currentEvolution || currentEvolution.level > pokemon.level || currentEvolution.level === null) {
+    if (species.is_baby || species.is_mythical || species.is_legendary) {
         return false;
     }
     return true;
+    
 }
+
 const getNewRandomPokemon = async (level = 5, trainer = false) => {
     console.log("getNewRandomPokemon", level, trainer);
     let randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
-    /* const legendaryPokemons = await getLegendaryPokemons();
-    console.log("legendary pokemons", legendaryPokemons);
-    let randomName = legendaryPokemons[Math.floor(Math.random() * legendaryPokemons.length)].name; */
-    let newPokemon = await getNewPokemon(randomId, { level, trainer });
-
-    while (!checkEvolutionIsCorrectForWildPokemon(newPokemon)) {
+    console.log("First randomId", randomId);
+    while(!await canBeFoundInWild(randomId)) {
         randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
-        newPokemon = await getNewPokemon(randomId, { level, trainer });
-
+        console.log("randomId", randomId);
     }
+    const newPokemon = await getNewPokemon(randomId, { level, trainer });
     const newPokemonDb = new Pokemon(newPokemon);
     await newPokemonDb.save();
     return newPokemonDb;
 }
+
 
 const getPokemons = async (idList, level = 5) => {
     const pokemons = await Promise.all(idList.map(async (id) => {
@@ -218,7 +206,7 @@ const addLevel = async (pokemonId) => {
         dbPokemon.maxHp = getMaxHp(dbPokemon);
         await dbPokemon.save();
 
-        const evolvedPokemonName = await evolve(dbPokemon);
+        const evolvedPokemonName = await evolutionController.evolve(dbPokemon);
         if (evolvedPokemonName && evolvedPokemonName !== dbPokemon.name) {
             const evolvedPokemon = await getNewPokemon(evolvedPokemonName, { level: dbPokemon.level, stats: dbPokemon.stats, activeMoves: dbPokemon.activeMoves });
             evolvedPokemon._id = dbPokemon._id;
@@ -400,6 +388,12 @@ const deletePokemon = async (pokemonId) => {
         return null;
     }
 }
+/**
+ * Reduces the data of a pokemon from external API to save it in the database
+ * @param {*} pokemon 
+ * @param {Boolean} short - if true, the data is reduced to only the name and sprites
+ * @returns Object with the reduced data
+ */
 const getReducedPokemonData = (pokemon, short = false) => {
     const types = pokemon.types.map((type) => {
         return type.type?.name || type.name || type;

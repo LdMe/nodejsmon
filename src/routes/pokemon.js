@@ -48,7 +48,6 @@ router.get('/fetch/random', async (req, res) => {
         if (user.username) {
             const userDb = await User.findOne({ username: user.username });
             userDb.enemies.push(pokemon._id);
-            console.log("enemies", userDb.enemies.length)
             await userDb.save();
         }
         res.json(pokemon);

@@ -1,4 +1,4 @@
-import { getSpecies } from "./speciesController.js";
+import speciesController from "./speciesController.js";
 import { fetchData } from "./utils.js";
 import EvolutionTemplate from "../../models/templates/evolutionChain.js";
 
@@ -51,7 +51,7 @@ const getEvolutionChainData = (evolutionChain) => {
 }
 
 const getEvolutions = async (pokemon) => {
-    const species = await getSpecies(pokemon);
+    const species = await speciesController.getSpecies(pokemon.id || pokemon);
     const evolutionChain = await getEvolutionChain(species);
     const evolutionChainData = getEvolutionChainData(evolutionChain);
     return evolutionChainData;
@@ -73,37 +73,24 @@ const evolve = (pokemon) => {
     if (!isEvolving(pokemon)) {
         return pokemon.name;
     }
-    /*
-     ordenar evoluciones por nivel y filtrar las que sean menores o iguales al nivel del pokemon
-    */
+
+    // ordenar evoluciones por nivel y filtrar las que sean menores o iguales al nivel del pokemon
     const sortedEvolutions = pokemon.evolutions.sort((a, b) => { return a.level - b.level });
+    console.log("pokemon level",pokemon.level)
+    // Filtrar evoluciones que sean menores o iguales al nivel del Pokémon
     const lowerEvolutions = sortedEvolutions.filter((evolution) => { return evolution.level <= pokemon.level });
+
+    // Filtrar las evoluciones que no sean por nivel
+    const levelUpEvolutions = lowerEvolutions.filter((evolution) => { return evolution.trigger === "level-up" });
+
     /* si no hay evoluciones, devolver el pokemon */
-    if (lowerEvolutions.length === 0) {
+    if (levelUpEvolutions.length === 0) {
         return pokemon.name;
     }
-    /* buscar la evolucion actual del pokemon */
-    const originalEvolution = pokemon.evolutions.find((evolution) => {
-        return evolution.name === pokemon.name;
-    });
-    /* si no hay evolucion actual, devolver el pokemon */
-    if (!originalEvolution) {
-        return pokemon.name;
-    }
-    /* buscar la posicion de la evolucion actual en el array de evoluciones */
-    const originalEvolutionIndex = pokemon.evolutions.indexOf(originalEvolution);
-    /* si no hay posicion, devolver el pokemon */
-    if (originalEvolutionIndex === -1) {
-        return pokemon.name;
-    }
-    /* coger la última evolucion del array */
-    let evolution = lowerEvolutions[lowerEvolutions.length - 1];
-    /* si la evolucion actual no es la ultima del array, coger la siguiente  a la actual*/
-    if (originalEvolutionIndex < lowerEvolutions.length - 1) {
-        evolution = lowerEvolutions[originalEvolutionIndex + 1];
-    }
-    return evolution.name;
-    
+    console.log("original pokemon name", pokemon.name);
+    console.log("last evolution name", levelUpEvolutions[levelUpEvolutions.length - 1].name);
+    // Tomar la última evolución posible dentro del nivel del Pokémon
+    return levelUpEvolutions[levelUpEvolutions.length - 1].name;
 }
 
 
@@ -111,5 +98,10 @@ export {
     isEvolving,
     getEvolutions,
     evolve,
+}
 
+export default {
+    isEvolving,
+    getEvolutions,
+    evolve
 }

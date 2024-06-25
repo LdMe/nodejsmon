@@ -1,20 +1,23 @@
 import { fetchData } from "./utils.js";
 import SpeciesTemplate from "../../models/templates/species.js";
 const speciesUrl = 'https://pokeapi.co/api/v2/pokemon-species';
-const getSpecies = async( pokemon )=>{
-    const name = pokemon.species.name || pokemon.name;
-    const oldSpecies = await SpeciesTemplate.findOne({name});
+const getSpecies = async( pokemonId )=>{
+    const oldSpecies = await SpeciesTemplate.findOne({id:pokemonId});
     if(oldSpecies){
         return oldSpecies;
     }
-    const url = speciesUrl + `/${pokemon.species.name}`;
+    const url = speciesUrl + `/${pokemonId}`;
     const [error,data] = await fetchData(url);
     if(error){
         throw error;
     }
+    try{
     const species = new SpeciesTemplate(data);
     species.save();
     return data;
+    }catch(error){
+        throw error;
+    }
 }
 const getFilteredSpecies = async (filter) => {
     const species = await SpeciesTemplate.find(filter);
@@ -22,6 +25,11 @@ const getFilteredSpecies = async (filter) => {
 }
 
 export {
+    getSpecies,
+    getFilteredSpecies
+}
+
+export default {
     getSpecies,
     getFilteredSpecies
 }
