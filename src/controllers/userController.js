@@ -36,6 +36,8 @@ const addPokemonToUser = async (username, pokemonId) => {
     user.pokemons = [...pokemonsSet];
     const capturedPokemonsSet = new Set([...user.capturedPokemons,pokemon.id]);
     user.capturedPokemons = [...capturedPokemonsSet];
+    const seenPokemonsSet = new Set([...user.seenPokemons,pokemon.id]);
+    user.seenPokemons = [...seenPokemonsSet];
 
     await user.save();
     await user.populate("pokemons")
