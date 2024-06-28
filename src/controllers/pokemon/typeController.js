@@ -27,9 +27,12 @@ const getReducedTypeData = type => {
     }
 }
     
-const getTypeData = async(type) =>{
+const getTypeData = async(type,reduced=false) =>{
     const existingType = await TypeTemplate.findOne({name:type.name});
     if(existingType){
+        if(reduced){
+            return getReducedTypeData(existingType);
+        }
         return existingType;
     }
     const url = `${typeUrl}/${type.name}`;
@@ -39,6 +42,9 @@ const getTypeData = async(type) =>{
     }
     const typeData = new TypeTemplate(data);
     await typeData.save();
+    if(reduced){
+        return getReducedTypeData(typeData);
+    }
     return typeData;
 }
 

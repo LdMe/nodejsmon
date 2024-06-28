@@ -257,16 +257,30 @@ const getPokemonByIdFromDb = async (id) => {
 }
 
 const getPokemonTemplatesFromDb = async (idList = null) => {
+    const ids = idList.split(",");
     try {
         let pokemons = [];
-        if (idList) {
-            pokemons = await PokemonTemplate.find({ _id: { $in: idList } });
+        if (ids && ids.length > 0) {
+            const firstElement = ids[0];
+            // if is an mongo _id type
+            if (typeof firstElement === "string" && firstElement.length === 24) {
+                pokemons = await PokemonTemplate.find({_id:{$in:ids}});
+            }
+            else{
+                pokemons = await PokemonTemplate.find({id:{$in:ids}});
+            }
         }
         else {
 
             pokemons = await PokemonTemplate.find();
         }
-        return pokemons.sort((a, b) => { return a.id - b.id });
+        const pokemonsData = await Promise.all(pokemons.map(async (pokemon) => {
+            const types = await getTypesData(pokemon);
+            console.log("types",types)
+            pokemon.types = types;
+            return pokemon
+        }))
+        return pokemonsData.sort((a, b) => { return a.id - b.id });
     } catch (error) {
         console.error(error);
         return [];

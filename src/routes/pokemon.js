@@ -20,7 +20,8 @@ router.get('/types', async (req, res) => {
 })
 router.get('/templates', async (req, res) => {
     try {
-        const pokemon = await pokemonController.getPokemonTemplatesFromDb();
+        const ids = req.query.ids || null;
+        const pokemon = await pokemonController.getPokemonTemplatesFromDb(ids);
         res.json(pokemon);
     }
     catch (error) {
@@ -48,6 +49,8 @@ router.get('/fetch/random', async (req, res) => {
         if (user.username) {
             const userDb = await User.findOne({ username: user.username });
             userDb.enemies.push(pokemon._id);
+            const seenPokemonsSet = new Set([...userDb.seenPokemons, pokemon.id]);
+            userDb.seenPokemons = [...seenPokemonsSet];
             await userDb.save();
         }
         res.json(pokemon);

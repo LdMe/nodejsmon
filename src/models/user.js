@@ -54,6 +54,14 @@ const userSchema = new Schema({
         type: Number,
         default: 10
     },
+    seenPokemons: {
+        type: Array,
+        default: []
+    },
+    capturedPokemons: {
+        type: Array,
+        default: []
+    }
 }, { strict: false });
 
 const User = mongoose.model('User', userSchema);
