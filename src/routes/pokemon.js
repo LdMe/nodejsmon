@@ -104,7 +104,6 @@ router.post('/attack', async (req, res) => {
         const pokemon1 = req.body.pokemon1;
         const pokemon2 = req.body.pokemon2;
         const result = await pokemonController.attack(pokemon1, pokemon2);
-        console.log("result", result)
         res.json(result);
     } catch (error) {
         console.error(error)

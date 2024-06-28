@@ -58,7 +58,6 @@ const getNewPokemon = async (id, options = {}) => {
         const evolvedName = evolutionController.evolve(pokemon);
         if (evolvedName && evolvedName !== pokemon.name) {
             const newPokemon = await fetchPokemon(evolvedName);
-            console.log("fetched new pokemon", newPokemon.name,newPokemon.id,MAX_POKEMON);
             if (newPokemon.id <= MAX_POKEMON) {
                 console.log("updating pokemon", newPokemon.name,newPokemon.id,MAX_POKEMON);
                 pokemon = newPokemon;

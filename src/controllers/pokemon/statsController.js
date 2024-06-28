@@ -2,9 +2,10 @@ const getMaxHp = (pokemon) => {
     if(!pokemon.stats[0].multiplier){
         pokemon.stats[0].multiplier = 1;
     }
-    const baseHp = Math.round(pokemon.stats[0].base_stat * pokemon.stats[0].multiplier);
+    const baseHp = Math.floor(pokemon.stats[0].base_stat * pokemon.stats[0].multiplier);
 
-    const hp = Math.floor(0.01 * (2 * parseInt(baseHp) ) * pokemon.level + 10 + pokemon.level);
+    const hp = Math.floor((0.01 * (2 * baseHp ) * pokemon.level) + 10 + pokemon.level);
+    console.log(`pokemon: ${pokemon.name} baseHp: ${baseHp} hp: ${hp}`);
     return hp;
 }
 const randomizeStatValues = (stats) => {
