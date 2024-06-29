@@ -28,7 +28,7 @@ const getGymData = async (gym) => {
     return newGym;
 }
 const getTrainerData = async (trainer) => {
-    const newTrainer = { ...trainer };
+    const newTrainer = { ...trainer._doc };
     newTrainer.pokemons = await getPokemonsData(trainer);
     return newTrainer;
 }
