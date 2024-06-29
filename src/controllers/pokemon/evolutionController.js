@@ -78,7 +78,7 @@ const evolve = (pokemon) => {
     const sortedEvolutions = pokemon.evolutions.sort((a, b) => { return a.level - b.level });
 
     // Filtrar evoluciones que sean menores o iguales al nivel del Pokémon
-    const lowerEvolutions = sortedEvolutions.filter((evolution) => { return evolution.level <= pokemon.level });
+    const lowerEvolutions = sortedEvolutions.filter((evolution) => { return evolution.level <= pokemon.level && !evolution.isBaby });
 
     // Filtrar las evoluciones que no sean por nivel
     const levelUpEvolutions = lowerEvolutions.filter((evolution) => { return evolution.trigger === "level-up" });
