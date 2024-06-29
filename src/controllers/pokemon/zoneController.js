@@ -18,7 +18,16 @@ const getZones = async () => {
         return { error }
     }
 }
-
+const getGymByZone = async (zoneName) => {
+    try {
+        const zone = await Zone.findOne({ name: zoneName });
+        await zone.populate("gym");
+        return zone.gym;
+    } catch (error) {
+        console.error(error);
+        return { error }
+    }
+}
 const getZone = async (name) => {
     try {
         const zone = await Zone.findOne({ name });
@@ -100,6 +109,7 @@ const deleteZone = async (name) => {
 export default {
     getZones,
     getZone,
+    getGymByZone,
     getZonesByHabitat,
     getHabitat,
     getPokemonsByZone,

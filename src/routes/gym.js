@@ -1,6 +1,8 @@
 import gymController from "../controllers/gymController.js";
 import { Router } from "express";
 import { isAdmin } from "../middleware/authMiddleware.js";
+import userController from "../controllers/userController.js";
+import zoneController from "../controllers/pokemon/zoneController.js";
 const router = Router();
 
 router.get("/", async(req, res) => {
@@ -13,6 +15,12 @@ router.get("/", async(req, res) => {
         res.status(500).json({error:"error al obtener gimnasios"});
     }
 });
+router.get("/zone", async(req, res) => {
+    const user = await userController.getUser(req.user.username);
+    const gym = await zoneController.getGymByZone(user.zone);
+    res.json(gym);
+
+})
 
 router.get("/:id", async(req, res) => {
     try {
