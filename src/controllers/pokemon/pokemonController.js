@@ -17,7 +17,7 @@ const MAX_POKEMON = parseInt(process.env.MAX_POKEMON || 2);
 const fetchAllPokemonsFromApi = async () => {
 
     for (let i = 1; i <= MAX_POKEMON; i++) {
-        console.log(`fetching pokemon ${i}`);
+
         const pokemon = await fetchPokemon(i);
         const types = await getTypesData(pokemon);
         const evolutions = await evolutionController.getEvolutions(pokemon);

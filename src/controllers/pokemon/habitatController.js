@@ -23,9 +23,12 @@ const getHabitats = async (req, res) => {
 }
 const getHabitatFromDB = async (name) => {
     try {
+
         const habitat = await Habitat.findOne({ name });
+
         return habitat;
     } catch (error) {
+        console.error(error);
         return { error }
     }
 }

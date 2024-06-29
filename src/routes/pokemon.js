@@ -46,9 +46,9 @@ router.get('/fetch/random', async (req, res) => {
         const level = req.query.level || 5;
         const trainer = req.query.trainer || false;
         const user = await userController.getUser(req.user.username);
-        //console.log("user", user)
+
         const zone = user.zone;
-        console.log("zone", zone)
+
         const pokemon = await pokemonController.getNewRandomPokemon(level, trainer, zone);
         user.enemies.push(pokemon._id);
         const seenPokemonsSet = new Set([...user.seenPokemons, pokemon.id]);

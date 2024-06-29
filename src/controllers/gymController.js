@@ -19,7 +19,7 @@ const getAllGyms = async () => {
     }
 }
 const getGymData = async (gym) => {
-    let newGym = { ...gym._doc };
+    let newGym = { ...(gym._doc || gym) };
 
     if(!newGym.trainers) {
         newGym.trainers = [];
@@ -49,6 +49,7 @@ const getGym = async (id) => {
         const gym = await GymModel.findById(id);
 
         const newGym = await getGymData(gym);
+        console.log("newGym",newGym);
 
         return newGym;
     }

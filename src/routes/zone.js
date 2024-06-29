@@ -7,6 +7,7 @@ const router = Router();
 
 router.get("/", async (req, res) => {
     const zones = await zoneController.getZones();
+
     res.json(zones);
 });
 
