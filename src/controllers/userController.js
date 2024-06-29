@@ -336,6 +336,17 @@ const disconnectUser = async (username) => {
     user.activeTime += (Date.now() - user.lastLogin) / 1000;
     await user.save();
 }
+const setZone = async (username, zone) => {
+
+    const user = await User.findOne({ username });
+    user.zone = zone;
+    await user.save();
+    return user;
+}
+const updateUser = async (user) => {
+    const newUser = await User.findOneAndUpdate({ username: user.username }, user, { new: true });
+    return newUser;
+}
 export default {
     addPokemonToUser,
     getUserPokemons,
@@ -352,5 +363,7 @@ export default {
     getConnectedUsers,
     connectUser,
     disconnectUser,
-    setMaxLevel
+    setMaxLevel,
+    setZone,
+    updateUser
 }

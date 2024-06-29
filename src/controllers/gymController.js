@@ -1,6 +1,7 @@
 import GymModel from '../models/gym.js';
 //import {getPokemonTemplateFromDb} from '../controllers/pokemon/pokemonController.js';
 import { fetchPokemon } from './pokemon/pokemonController.js';
+import zoneController from './pokemon/zoneController.js';
 const getAllGyms = async () => {
     try {
 
@@ -18,7 +19,11 @@ const getAllGyms = async () => {
     }
 }
 const getGymData = async (gym) => {
-    const newGym = { ...gym };
+    let newGym = { ...gym._doc };
+
+    if(!newGym.trainers) {
+        newGym.trainers = [];
+    }
     newGym.trainers = await Promise.all(newGym.trainers.filter(trainer => trainer).map((trainer) => getTrainerData(trainer)));
     return newGym;
 }
@@ -28,36 +33,49 @@ const getTrainerData = async (trainer) => {
     return newTrainer;
 }
 const getPokemonsData = async (trainer) => {
-    console.log("pokemon triner", trainer);
+
     const pokemons = await Promise.all(trainer.pokemons.map((pokemon) => fetchPokemon(pokemon.name)));
     return pokemons.map((pokemon) => {
-        console.log("trainer", trainer.pokemons);
+
         const newPokemon = { ...pokemon._doc };
         newPokemon.level = trainer.pokemons.find((p) => p.name === pokemon.name).level;
-        console.log("pokemon", newPokemon);
+
         return newPokemon;
     });
 }
 const getGym = async (id) => {
     try {
+        if(!id) return null;
         const gym = await GymModel.findById(id);
+
         const newGym = await getGymData(gym);
-        return gym;
+
+        return newGym;
     }
     catch (error) {
         console.error(error);
-        return {};
+        return null;
     }
 }
 
 const createGym = async (gym) => {
     try {
+
         const oldGym = await GymModel.findOne({ name: gym.name });
         if (oldGym) {
             return { error: "gimnasio ya existe" };
         }
         const newGym = new GymModel(gym);
         await newGym.save();
+
+        if (gym.zone) {
+
+            const zone = await zoneController.getZone(gym.zone.name);
+            zone.gym = newGym._id;
+            await zoneController.updateZone(zone.name,zone);
+
+            
+        }
         return newGym;
     }
     catch (error) {
@@ -67,6 +85,7 @@ const createGym = async (gym) => {
 }
 
 const updateGym = async (id, gym) => {
+
     try {
         const updatedGym = await GymModel.findByIdAndUpdate(id, gym);
         return updatedGym;
@@ -84,7 +103,7 @@ const deleteGym = async (id) => {
     }
     catch (error) {
         console.error(error);
-        return {};
+        return { error: "error al actualizar gimnasio" };
     }
 }
 

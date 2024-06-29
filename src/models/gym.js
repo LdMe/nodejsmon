@@ -45,6 +45,10 @@ const gymSchema = new Schema({
         ref: "Badge",
     },
     maxLevel: Number,
+    zone: {
+        type: Schema.Types.ObjectId,
+        ref: "Zone",
+    }
 });
 
 gymSchema.pre("find",  function () {

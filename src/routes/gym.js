@@ -27,6 +27,7 @@ router.get("/:id", async(req, res) => {
 
 router.post("/", isAdmin,async(req, res) => {
     try {
+
         const gym = await gymController.createGym(req.body);
         res.json(gym);
     }

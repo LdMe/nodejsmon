@@ -76,7 +76,7 @@ const evolve = (pokemon) => {
 
     // ordenar evoluciones por nivel y filtrar las que sean menores o iguales al nivel del pokemon
     const sortedEvolutions = pokemon.evolutions.sort((a, b) => { return a.level - b.level });
-    console.log("pokemon level",pokemon.level)
+
     // Filtrar evoluciones que sean menores o iguales al nivel del Pokémon
     const lowerEvolutions = sortedEvolutions.filter((evolution) => { return evolution.level <= pokemon.level });
 
@@ -87,8 +87,8 @@ const evolve = (pokemon) => {
     if (levelUpEvolutions.length === 0) {
         return pokemon.name;
     }
-    console.log("original pokemon name", pokemon.name);
-    console.log("last evolution name", levelUpEvolutions[levelUpEvolutions.length - 1].name);
+
+
     // Tomar la última evolución posible dentro del nivel del Pokémon
     return levelUpEvolutions[levelUpEvolutions.length - 1].name;
 }

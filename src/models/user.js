@@ -61,6 +61,10 @@ const userSchema = new Schema({
     capturedPokemons: {
         type: Array,
         default: []
+    },
+    zone: {
+        type: String,
+        default: 'Llanuras Doradas'
     }
 }, { strict: false });
 

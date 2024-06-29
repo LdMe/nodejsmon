@@ -58,10 +58,7 @@ const speciesSchema = new Schema({
         name: String,
         url: String,
     },
-    habitat: {
-        name: String,
-        url: String,
-    },
+    habitat: String,
     has_gender_differences: Boolean,
     hatch_counter: Number,
     is_baby: Boolean,

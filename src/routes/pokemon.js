@@ -3,6 +3,8 @@ import pokemonController from '../controllers/pokemon/pokemonController.js';
 import habitatController from '../controllers/pokemon/habitatController.js';
 import typeController from '../controllers/pokemon/typeController.js';
 import User from '../models/user.js';
+import userController from '../controllers/userController.js';
+import zoneController from '../controllers/pokemon/zoneController.js';
 const router = Router();
 
 router.get('/', (req, res) => {
@@ -15,49 +17,48 @@ router.get('/types', async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({error:"error al buscar pokemon"});
+        res.status(500).json({ error: "error al buscar pokemon" });
     }
 })
 router.get('/templates', async (req, res) => {
     try {
-        const ids = req.query.ids || null;
+        const ids = req.query.ids === "null" ? null : req.query.ids;
         const pokemon = await pokemonController.getPokemonTemplatesFromDb(ids);
         res.json(pokemon);
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({error:"error al buscar pokemon"});
+        res.status(500).json({ error: "error al buscar pokemon" });
     }
 })
 router.get('/fetch/all', async (req, res) => {
     try {
         await pokemonController.fetchAllPokemonsFromApi();
-        res.json({message:"pokemons fetched"});
+        res.json({ message: "pokemons fetched" });
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({error:"error al buscar pokemon"});
+        res.status(500).json({ error: "error al buscar pokemon" });
     }
 });
 router.get('/fetch/random', async (req, res) => {
     try {
         const level = req.query.level || 5;
         const trainer = req.query.trainer || false;
-        console.log("is trainer pokemon", trainer)
-        const pokemon = await pokemonController.getNewRandomPokemon(level, trainer);
-        const user = req.user;
-        if (user.username) {
-            const userDb = await User.findOne({ username: user.username });
-            userDb.enemies.push(pokemon._id);
-            const seenPokemonsSet = new Set([...userDb.seenPokemons, pokemon.id]);
-            userDb.seenPokemons = [...seenPokemonsSet];
-            await userDb.save();
-        }
+        const user = await userController.getUser(req.user.username);
+        //console.log("user", user)
+        const zone = user.zone;
+        console.log("zone", zone)
+        const pokemon = await pokemonController.getNewRandomPokemon(level, trainer, zone);
+        user.enemies.push(pokemon._id);
+        const seenPokemonsSet = new Set([...user.seenPokemons, pokemon.id]);
+        user.seenPokemons = [...seenPokemonsSet];
+        await userController.updateUser(user);
         res.json(pokemon);
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({error:"error al buscar pokemon"});
+        res.status(500).json({ error: "error al buscar pokemon" });
     }
 });
 router.get('/fetch/:id', async (req, res) => {
@@ -66,7 +67,7 @@ router.get('/fetch/:id', async (req, res) => {
         const id = req.params.id;
         const save = req.query.save;
         const trainer = req.query.trainer || false;
-        console.log("is trainer pokemon", trainer)
+
         // if id is a number, it is the id of the generic pokemon, if it is a string, it is the _id of the pokemon in the database
         if (isNaN(id)) {
             const pokemon = await pokemonController.getPokemonByIdFromDb(id);
@@ -75,20 +76,20 @@ router.get('/fetch/:id', async (req, res) => {
         }
 
         const level = req.query.level || 5;
-        console.log("level", level);
+
         const pokemon = await pokemonController.getNewPokemon(id, { level, save, trainer });
-        console.log("pokemon", pokemon._id)
-        //console.log("pokemon", pokemon)
+
+
         const user = req.user;
         if (user.username) {
             const userDb = await User.findOne({ username: user.username });
             userDb.enemies.push(pokemon._id);
-            console.log("enemies", userDb.enemies.length)
+
             await userDb.save();
         }
         res.json(pokemon);
     } catch (error) {
-        res.status(404).json({error:"pokemon no encontrado"});
+        res.status(404).json({ error: "pokemon no encontrado" });
     }
 });
 router.get('/starter', async (req, res) => {
@@ -98,7 +99,7 @@ router.get('/starter', async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({error:"error al buscar pokemon"});
+        res.status(500).json({ error: "error al buscar pokemon" });
     }
 });
 
@@ -110,7 +111,7 @@ router.post('/attack', async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error(error)
-        res.status(404).json({error:"pokemon no encontrado"});
+        res.status(404).json({ error: "pokemon no encontrado" });
     }
 });
 
@@ -121,23 +122,23 @@ router.put('/level', async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error(error);
-        res.status(404).json({error:"pokemon no encontrado"});
+        res.status(404).json({ error: "pokemon no encontrado" });
     }
 });
 
 router.delete('/saved/:id', async (req, res) => {
     try {
         const id = req.params.id;
-        console.log("deleting pokemon", id);
+
         const pokemon = await pokemonController.deletePokemon(id);
         res.json(pokemon);
     } catch (error) {
         console.error(error);
-        res.status(404).json({error:"pokemon no encontrado"});
+        res.status(404).json({ error: "pokemon no encontrado" });
     }
 });
 router.get("/habitats", habitatController.getHabitats);
-router.get("/legendary",async(req,res)=>{
+router.get("/legendary", async (req, res) => {
     const pokemons = await pokemonController.getLegendaryPokemons();
     res.json(pokemons);
 });

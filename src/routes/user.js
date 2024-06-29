@@ -155,5 +155,18 @@ router.put("/maxlevel", (req, res) => {
     }
 });
 
+router.put("/zone", (req, res) => {
+    try {
+        const username = req.user.username;
+        const zone = req.body.zone;
+        userController.setZone(username, zone);
+        res.json({message:"ok"});
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"Error interno"});
+    }
+});
+
 
 export default router;
