@@ -168,5 +168,17 @@ router.put("/zone", (req, res) => {
     }
 });
 
+router.put("/reset", (req, res) => {
+    try {
+        const username = req.user.username;
+        userController.resetUser(username);
+        res.json({message:"ok"});
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({error:"Error interno"});
+    }
+});
+
 
 export default router;

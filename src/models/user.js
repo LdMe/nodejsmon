@@ -65,9 +65,22 @@ const userSchema = new Schema({
     zone: {
         type: String,
         default: 'Llanuras Doradas'
+    },
+    ironMan: {
+        type: Boolean,
+        default: false
+    },
+    hardcore: {
+        type: Boolean,
+        default: false
     }
 }, { strict: false });
 
+userSchema.pre("save", function () {
+    if(this.zone === null){
+        this.zone = 'Llanuras Doradas';
+    }
+})
 const User = mongoose.model('User', userSchema);
 
 export default User;
