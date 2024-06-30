@@ -1,0 +1,38 @@
+[
+    {
+      "name": "Llanuras Doradas",
+      "habitat": "grassland"
+    },
+    {
+      "name": "Bosque Susurrante",
+      "habitat": "forest"
+    },
+    {
+      "name": "Costa Espumosa",
+      "habitat": "waters-edge"
+    },
+    {
+      "name": "Metrópolis Luminosa",
+      "habitat": "urban"
+    },
+    {
+      "name": "Gruta Cristalina",
+      "habitat": "cave"
+    },
+    {
+      "name": "Bahía Coralina",
+      "habitat": "sea"
+    },
+    {
+      "name": "Cañón Escarpado",
+      "habitat": "rough-terrain"
+    },
+    {
+      "name": "Picos Neblinosos",
+      "habitat": "mountain"
+    },
+    {
+      "name": "Santuario Arcano",
+      "habitat": "rare"
+    }
+  ]
