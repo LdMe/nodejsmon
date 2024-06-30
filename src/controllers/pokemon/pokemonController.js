@@ -148,10 +148,8 @@ const getNewRandomPokemon = async (level = 5, trainer = false,zone=null) => {
 
         const randomId = possiblePokemons[Math.floor(Math.random() * possiblePokemons.length)];
 
-        const newPokemon = await getNewPokemon(randomId, { level, trainer });
-        const newPokemonDb = new Pokemon(newPokemon);
-        await newPokemonDb.save();
-        return newPokemonDb;
+        const newPokemon = await getNewPokemon(randomId, { level, trainer, save: true });
+        return newPokemon;
     }
     let randomId = Math.floor(Math.random() * MAX_POKEMON) + 1;
 

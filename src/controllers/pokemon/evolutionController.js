@@ -74,6 +74,12 @@ const evolve = (pokemon) => {
         return pokemon.name;
     }
 
+    const currentEvolution = pokemon.evolutions.find((evolution) => {
+        return evolution.name === pokemon.name;
+    });
+    if(currentEvolution?.trigger !=="level-up" && pokemon.level >=35){
+        return pokemon.name;
+    }
     // ordenar evoluciones por nivel y filtrar las que sean menores o iguales al nivel del pokemon
     const sortedEvolutions = pokemon.evolutions.sort((a, b) => { return a.level - b.level });
 
