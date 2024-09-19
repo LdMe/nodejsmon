@@ -1,6 +1,5 @@
 # Nodejsmon Backend
 
-![Nodejsmon Logo](/api/placeholder/200/100)
 
 Nodejsmon is the backend service for the Reactmon game, providing a robust API built with Node.js and MongoDB. This project demonstrates modern backend development practices, including containerization with Docker and environment-based configuration.
 
